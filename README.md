@@ -16,7 +16,7 @@ The project involves developing a web search engine.
 As members working in this team, we are all responsible for contributing our delegated responsibilities, roles, and work that we discuss as a team to complete this project.
 
 ### Team Website
-https://se6362dreamteam.github.io/GoodProject/
+Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/]
 
 ### Team Schedule
 Due Date | Deliverable | Team Lead | Tools
