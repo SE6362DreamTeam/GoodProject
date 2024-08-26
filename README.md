@@ -15,10 +15,13 @@ The project involves developing a web search engine.
 ### Team Organization
 As members working in this team, we are all responsible for contributing our delegated responsibilities, roles, and work that we discuss as a team to complete this project.
 
+### Team Website
+https://se6362dreamteam.github.io/GoodProject/
+
 ### Team Schedule
 Due Date | Deliverable | Team Lead | Tools
 
-8/29/2024 | Preliminary Project Plan | Mansi Patel | Google Doc, GitHub, GitHub Pages
+8/29/2024 | Preliminary Project Plan | Mansi Patel | Google Docs, GitHub, GitHub Pages
 
 9/26/2024 | Phase I.1: Interim | ...
 
