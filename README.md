@@ -25,13 +25,13 @@ Due Date | Deliverable | Team Lead | Tools
 8/29/2024 | Preliminary Project Plan | Mansi Patel | Google Doc, GitHub, GitHub Pages
 
 
-9/26/2024 | Phase I.1: Interim | Logan Dane |RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
+9/26/2024 | Phase I.1: Interim | Logan Dane | RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
 
 
 10/8/2024 | Phase I.2: Final | Lennon Crow | RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
 
 
-11/14/2024 | Phase II.1: Interim | Logan Dane |RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
+11/14/2024 | Phase II.1: Interim | Logan Dane | RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
  
 
 12/3/2024 | Phase II.2: Final | Mansi Patel | RE-Tools, Python, Flask, SQL, GitHub, GitHub Pages
