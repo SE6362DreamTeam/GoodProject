@@ -1,10 +1,8 @@
 import csv
-import pprint
-# Class KWIC
-class KWIC:
 
+class Input:
 # method readInput:
-    def readInput(self, file_name):
+    def read_input(self, file_name):
         # Create a dictionary to hold each line we read in
         # Key: search phrase
         # Value: list of URLs for that search phrase
@@ -32,12 +30,15 @@ class KWIC:
                     for j in range(1, term_length+1):
                         (file_lines[line[0]]).append(line[j])
                     # Call circular shift for the current line
-                    KWIC.circularShift(self, line[0], file_lines[line[0]])
+                    CircularShift.circular_shift(self, line[0], file_lines[line[0]])
                 # print(line[0], ":" , file_lines[line[0]])
-        
 
-# method circularshift:
-    def circularShift(self, current_term, URLs):
+    # def read_phrase
+        # Use this to pass the search phrase to circular shift
+
+class CircularShift:
+    # method circularshift:
+    def circular_shift(self, current_term, URLs):
         # Create a dictionary to keep track of the URLs as circular shifts occur
         # Key:  circular shift
         # Value: its corresponding URL given in the input file
@@ -61,10 +62,15 @@ class KWIC:
             lines_with_urls[line] = URLs[i]
         # print(lines_with_urls)
         # Call alphabetize for the current search phrase (after circular shifts are complete for it)
-        KWIC.alphabetize(self, lines_with_urls)
-            
-# method alphabetize:
-    def alphabetize(self, circular_shifts_with_urls):
+        Alphabetizer.alphabetize_with_urls(self, lines_with_urls)
+    
+    # def circular_shift_for_search(self, search_phrase)
+        # Perform circular shift on the search phrase that is given
+
+class Alphabetizer:
+
+# method alphabetize_with_urls:
+    def alphabetize_with_urls(self, circular_shifts_with_urls):
         # Create an dictionary to keep track of the URLs as the shifts are alphabetized
         # Key: circular shift line
         # Value: URL
@@ -79,15 +85,22 @@ class KWIC:
             alphabetized_dict[circular_shift] = circular_shifts_with_urls[circular_shift]
         
         print(alphabetized_dict)
+    
+    # def alphabetize_line()
+        # Use this to alphabetize the circular shifts of a search phrase
 
-# method storeOutput:
+# class Output:
+    # store in DB method
+
+    # query from DB method
 
 # method main:
 def main():
-    # calls readInput, passes input file to it
-    kwic_system = KWIC()
-    kwic_system.readInput("SE 6362 Project Engine Data.csv")
-    # calls storeOutput once a flag (lineProcessed is set to true)
+    # Set up database
+    print("Setting up database...")
+    # calls read_input, passes input file to it
+    kwic_input = Input()
+    kwic_input.read_input("SE 6362 Project Engine Data.csv")
 
 if __name__ == '__main__':
     main()
