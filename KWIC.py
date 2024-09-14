@@ -83,24 +83,29 @@ class Alphabetizer:
         for circular_shift in sorted_shifts:
             # Add the current circular shift line and its corresponding url to a new alphabetized dictionary
             alphabetized_dict[circular_shift] = circular_shifts_with_urls[circular_shift]
-        
+
         print(alphabetized_dict)
-    
+        
     # def alphabetize_line()
         # Use this to alphabetize the circular shifts of a search phrase
 
-# class Output:
+class Output:
     # store in DB method
+
+    # print contents method
+    def print_output(self, alphabetized_dict):
+        print(alphabetized_dict)
 
     # query from DB method
 
-# method main:
-def main():
-    # Set up database
-    print("Setting up database...")
-    # calls read_input, passes input file to it
-    kwic_input = Input()
-    kwic_input.read_input("SE 6362 Project Engine Data.csv")
+class Main:
+    # method main:
+    def main():
+        # Set up database
+        print("Setting up database...")
+        # calls read_input, passes input file to it
+        kwic_input = Input()
+        kwic_input.read_input("SE 6362 Project Engine Data.csv")
 
 if __name__ == '__main__':
-    main()
+    Main.main()
