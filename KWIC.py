@@ -1,6 +1,9 @@
 import csv
 
 class Input:
+    def __init__(self, circular_shift):
+        self.circular_shifter = circular_shift
+
 # method readInput:
     def read_input(self, file_name):
         # Create a dictionary to hold each line we read in
@@ -30,22 +33,24 @@ class Input:
                     for j in range(1, term_length+1):
                         (file_lines[line[0]]).append(line[j])
                     # Call circular shift for the current line
-                    CircularShift.circular_shift(self, line[0], file_lines[line[0]])
-                # print(line[0], ":" , file_lines[line[0]])
+                    self.circular_shifter.circular_shift(line[0])
 
     # def read_phrase
         # Use this to pass the search phrase to circular shift
 
 class CircularShift:
-    # method circularshift:
-    def circular_shift(self, current_term, URLs):
+    # Constructor
+    def __init__(self, file_lines, alphabetizer):
         # Create a dictionary to keep track of the URLs as circular shifts occur
         # Key:  circular shift
         # Value: its corresponding URL given in the input file
-        lines_with_urls = dict()
+        self.file_lines = file_lines
+        self.alpha_obj = alphabetizer
 
+    # method circular_shift:
+    def circular_shift(self, current_line):
         # Split the current line by spaces
-        words = current_term.split(" ")
+        words = current_line.split(" ")
 
         # If there are n-1 words in a line, then n circular shifts must occur for the line 
         # to return to its original state
@@ -58,43 +63,36 @@ class CircularShift:
             words.append(popped_term)
             # Join the words array with spaces and store it in line (one whole string now)
             line = " ".join(words)
-            # Add the circular shift to the lines_with_urls dictionary, along with its URL
-            lines_with_urls[line] = URLs[i]
-        # print(lines_with_urls)
+            self.file_lines.append(line)
         # Call alphabetize for the current search phrase (after circular shifts are complete for it)
-        Alphabetizer.alphabetize_with_urls(self, lines_with_urls)
+        self.alpha_obj.alphabetize(self.file_lines)
     
     # def circular_shift_for_search(self, search_phrase)
         # Perform circular shift on the search phrase that is given
 
 class Alphabetizer:
+    def __init__(self, output):
+        self.output_obj = output
 
-# method alphabetize_with_urls:
-    def alphabetize_with_urls(self, circular_shifts_with_urls):
-        # Create an dictionary to keep track of the URLs as the shifts are alphabetized
-        # Key: circular shift line
-        # Value: URL
-        alphabetized_dict = dict()
-
-        # Sort the circular shifts alphabetically and store in a new list
-        sorted_shifts = sorted(circular_shifts_with_urls, key=lambda s: s.lower())
-
-        # Go through each index of the sorted list
-        for circular_shift in sorted_shifts:
-            # Add the current circular shift line and its corresponding url to a new alphabetized dictionary
-            alphabetized_dict[circular_shift] = circular_shifts_with_urls[circular_shift]
-
-        print(alphabetized_dict)
-        
-    # def alphabetize_line()
-        # Use this to alphabetize the circular shifts of a search phrase
+# method alphabetize:
+    def alphabetize(self, file_lines):
+        # Sort all circular shifts alphabetically and store in a new list
+        sorted_shifts = sorted(file_lines, key=lambda s: s.lower())
+        self.output_obj.updateOutput(sorted_shifts)
 
 class Output:
+    def __init__(self):
+        self.alphabetized_lines = list()
     # store in DB method
 
-    # print contents method
-    def print_output(self, alphabetized_dict):
-        print(alphabetized_dict)
+    # Update the list of alphabetized_lines as it receives more alphabetized shifts from
+    # Alphabetizer
+    def updateOutput(self, alphabetized_shifts):
+        self.alphabetized_lines = alphabetized_shifts
+
+    # Print all alphabetized lines method
+    def print_output(self):
+        print(self.alphabetized_lines)
 
     # query from DB method
 
@@ -103,9 +101,19 @@ class Main:
     def main():
         # Set up database
         print("Setting up database...")
-        # calls read_input, passes input file to it
-        kwic_input = Input()
+
+        # Instantiate objects
+        kwic_output = Output()
+        alphabetizer = Alphabetizer(kwic_output)
+        circular_shifter = CircularShift(list(), alphabetizer)
+        kwic_input = Input(circular_shifter)
+
+        # Calls read_input, passes input file to it
         kwic_input.read_input("SE 6362 Project Engine Data.csv")
+
+        # Print the output of all circular shifts
+        kwic_output.print_output()
+
 
 if __name__ == '__main__':
     Main.main()
