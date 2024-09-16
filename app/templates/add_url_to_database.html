@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+
+{% block title %}Add URL{% endblock %}
+
+{% block content %}
+    <h1>Add URL</h1>
+    <form method="POST" action="{{ url_for('add_url_to_database') }}">
+        {{ form.hidden_tag() }}
+        {{ form.search_term.label }} {{ form.search_term() }}
+        {{ form.url.label }} {{ form.url() }}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}

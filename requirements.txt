@@ -5,3 +5,4 @@ beautifulsoup4
 sqlalchemy
 mysql-connector-python
 flask-sqlalchemy
+bootstrap-flask
