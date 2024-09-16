@@ -2,10 +2,10 @@ from flask import Flask
 from app.db import db  # SQLAlchemy instance
 from dotenv import load_dotenv
 import os
+from app.db_map import Base, Map  # Assuming Base is your declarative base class
 
 def create_app():
-    """Application factory function"""
-    # Load environment variables from the .env file
+    # Load environment variables from .env file
     load_dotenv()
 
     # Initialize the Flask app
@@ -23,6 +23,10 @@ def create_app():
 
     # Initialize the database with the app
     db.init_app(app)
+
+    # Create database tables if they don't exist
+    with app.app_context():
+        Base.metadata.create_all(db.engine)
 
     # Register the routes
     from app import routes
