@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add URL to Database</title>
+</head>
+<body>
+    <h1>Add a URL</h1>
+
+    <!-- Form using Flask-WTF form object -->
+    <form method="POST" action="{{ url_for('add_url_to_database') }}">
+        {{ form.hidden_tag() }}
+
+        <!-- Search Term Field -->
+        <label for="search_term">{{ form.search_term.label }}</label><br>
+        {{ form.search_term(size=30) }}<br>
+        {% if form.search_term.errors %}
+            <ul>
+                {% for error in form.search_term.errors %}
+                    <li style="color: red;">{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <br>
+
+        <!-- URL Field -->
+        <label for="url">{{ form.url.label }}</label><br>
+        {{ form.url(size=30) }}<br>
+        {% if form.url.errors %}
+            <ul>
+                {% for error in form.url.errors %}
+                    <li style="color: red;">{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <br>
+
+        <!-- Submit button -->
+        <input type="submit" value="Add URL">
+    </form>
+
+    <!-- Back to Home Page -->
+    <br>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>
