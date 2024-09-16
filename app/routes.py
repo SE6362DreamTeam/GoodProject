@@ -23,14 +23,19 @@ def init_app(app):
             # Create a new instance of the URLs model
             new_url = URLs(search_term=search_term, url=url)
 
-            # Add the new URL to the database
-            db.session.add(new_url)
-            db.session.commit()  # Commit the transaction
-
-            # Flash a success message
-            flash('URL added successfully!', 'success')
+            try:
+                # Add the new URL to the database
+                db.session.add(new_url)
+                db.session.commit()
+                flash('URL added successfully!', 'success')
+            except Exception as e:
+                db.session.rollback()  # Rollback in case of an error
+                flash(f'Error: {str(e)}', 'danger')
 
             return redirect(url_for('add_url_to_database'))
 
-        # Render the form template
-        return render_template('add_url_to_database.html', form=form)
+        # Query all URLs using session.query
+        urls = db.session.query(URLs).all()
+
+        # Render the form template and pass the URLs to the template
+        return render_template('add_url_to_database.html', form=form, urls=urls)

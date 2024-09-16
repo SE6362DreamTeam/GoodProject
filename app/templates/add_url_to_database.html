@@ -6,8 +6,55 @@
     <h1>Add URL</h1>
     <form method="POST" action="{{ url_for('add_url_to_database') }}">
         {{ form.hidden_tag() }}
-        {{ form.search_term.label }} {{ form.search_term() }}
-        {{ form.url.label }} {{ form.url() }}
-        <button type="submit">Submit</button>
+
+        <div>
+            {{ form.search_term.label }}
+            {{ form.search_term(class_="form-control") }}
+            {% if form.search_term.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.search_term.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div>
+            {{ form.url.label }}
+            {{ form.url(class_="form-control") }}
+            {% if form.url.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.url.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+
+    <h2>Stored URLs</h2>
+    <table border="1" class="table mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Search Term</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for url in urls %}
+                <tr>
+                    <td>{{ url.url_id }}</td>
+                    <td>{{ url.search_term }}</td>
+                    <td><a href="{{ url.url }}" target="_blank">{{ url.url }}</a></td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="3">No URLs found</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
