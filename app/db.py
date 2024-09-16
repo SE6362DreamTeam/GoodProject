@@ -1,55 +1,40 @@
-import db_credentials  # Import your sensitive information from config.py (or hardcode if needed)
-from mysql.connector import Error
+import csv
+import os
+
+from sqlalchemy import MetaData
+
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, DECIMAL, PrimaryKeyConstraint
+from sqlalchemy.ext.automap import automap_base
+from flask_sqlalchemy import SQLAlchemy
+from app.db_map import Map, Base
+import logging
+
+db = SQLAlchemy()
+map = Map()
 
 
-class Database:
+def init_db(app):
 
-    # class constructor
-    def __init__(self):
-        self.connection = None
+    try:
+        # Build the database URI using the environment variables
+        FLASK_SQLALCHEMY_DATABASE_URI = (
+            f"{os.getenv('DB_FLAVOR')}://"
+            f"{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@"
+            f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/"
+            f"{os.getenv('DB_NAME')}"
+        )
 
+        # Configure the Flask app for SQLAlchemy
+        app.config['SQLALCHEMY_DATABASE_URI'] = FLASK_SQLALCHEMY_DATABASE_URI
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True  # Or False, to avoid warnings
+        app.config['SQLALCHEMY_ECHO'] = True  # Log all SQL statements
 
-    # The connection to the database
-    def connect(self):
+        # Initialize the SQLAlchemy object with the app
+        db.init_app(app)
 
-        """Establish the connection to the database."""
-        if self.connection:
-            try:
+        logging.info("Database connected successfully.")
+        return db
 
-                host= db_credentials.DB_HOST,
-                user= db_credentials.DB_USERNAME,
-                password= db_credentials.DB_PASSWORD,
-                database= db_credentials.DB_NAME
-
-
-            except Error as e:
-                print(f"Error: ***Connection to database failed*** {e}")
-
-
-    # close the connection to the databse
-    def close(self):
-        """Close the database connection."""
-        if self.connection:
-            self.connection.close()
-            self.connection = None
-
-
-
-    # execute query in the database
-    def execute_query(self, query, params=None):
-        """Execute an SQL query."""
-        self.connect()  # Ensure connection is established
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-        self.connection.commit()
-        cursor.close()
-
-
-    def fetch_all(self, query, params=None):
-        """Fetch all rows from an SQL query."""
-        self.connect()
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+    except Exception as e:
+        logging.error("Failed to connect to the database.", exc_info=True)
+        raise e
