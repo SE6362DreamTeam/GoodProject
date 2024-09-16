@@ -1,1 +1,7 @@
 Flask~=3.0.3
+Flask-WTF
+requests
+beautifulsoup4
+sqlalchemy
+mysql-connector-python
+flask-sqlalchemy
