@@ -1,7 +1,5 @@
 import csv
 from abc import ABC,abstractmethod
-import threading
-from queue import Queue
 
 #Interface for the LineStorage class
 class LineStorage_Interface:
@@ -16,12 +14,6 @@ class LineStorage_Interface:
         pass
     @abstractmethod
     def getAllLines(self):
-        pass
-    @abstractmethod
-    def addLineToQueue(self, line: str):
-        pass
-    @abstractmethod
-    def getQueue(self) -> Queue:
         pass
 
 #Interface for the Input class
@@ -53,9 +45,6 @@ class CircularShift_Interface:
     @abstractmethod
     def get_shifted_Lines(self) -> list:
         pass
-    abstractmethod
-    def getQueue(self) -> Queue:
-        pass
 
 #Interface for the Alphabetize class
 class Alphabetize_Interface:
@@ -71,9 +60,6 @@ class Alphabetize_Interface:
     @abstractmethod
     def get_circular_shift_by_index(self, index: int) -> list:
         pass
-    @abstractmethod
-    def getQueue(self) -> Queue:
-        pass
 
 #Interface for the Output class
 class Output_Interface:
@@ -88,7 +74,7 @@ class Output_Interface:
 class csv_Input(Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         self.lineStorage = lineStorage
-        self.file_lines = {}
+        self.file_lines = None
     def read_input(self, file_name) -> None:
         # Create a dictionary to hold each line we read in
         # Key: search phrase
@@ -116,11 +102,7 @@ class csv_Input(Input_Interface):
                     # Go through each URL of the current line and add it to the value
                     for j in range(1, term_length+1):
                         (file_lines[line[0]]).append(line[j])
-                    #Add the line to the lineStorage queue for further processing
-                    self.lineStorage.addLineToQueue(line[0])
         self.file_lines = file_lines
-        #Add a "None" to the lineStorage queue to show that we are done reading input
-        self.lineStorage.addLineToQueue(None)
     #Stores the input lines into the lineStorage object instance
     def store_input(self) -> None:
         self.lineStorage.store_input(self.file_lines)
@@ -128,8 +110,7 @@ class csv_Input(Input_Interface):
 #Class for keeping all lines from a site
 class LineStorage(LineStorage_Interface):
     def __init__(self) -> None:
-        self.file_lines = {}
-        self.queue = Queue()
+        self.file_lines = None
     #Stores the input into the file_lines variable
     def store_input(self, line_Dict: dict) -> None:
         self.file_lines = line_Dict
@@ -139,13 +120,6 @@ class LineStorage(LineStorage_Interface):
     #Returns all lines
     def getAllLines(self):
         return self.file_lines
-    #Adds a line to the queue
-    def addLineToQueue(self, line: str):
-        self.queue.put(line)
-        pass
-    #Gets the queue
-    def getQueue(self) -> Queue:
-        return self.queue
 
 #Class for circularly shifting lines
 class CircularShift(CircularShift_Interface):
@@ -153,24 +127,10 @@ class CircularShift(CircularShift_Interface):
         self.lineStorage = lineStorage
         self.file_lines = None
         self.shifted_lines = None
-        self.queue = Queue()
     #Retrieves the lines form line storage and saves them into this object instance
     def retrieve_and_save_lines(self) -> None:
-        #Continuously check the lineStorage queue for more lines
-        while True:
-            #Grab a line from the queue
-            line = self.lineStorage.getQueue().get()
-            #If we grab a "None", then we are done reading input
-            if line is None:
-                #So we add a "None" to our own queue
-                self.queue.put(None)
-                #Then we can grab the entirety of the file lines for record keeping
-                self.file_lines = list(self.lineStorage.getAllLines())
-                break
-            #If it is not none, we need to shift the line
-            self.shift_current_line(line)
+        self.file_lines = list(self.lineStorage.getAllLines())
     #Shifts every line stored and saves them
-    #This method is actually not used in this implementation
     def circular_shift(self) -> None:
         newLines = []
         for line in self.file_lines:
@@ -197,72 +157,40 @@ class CircularShift(CircularShift_Interface):
             # Join the words array with spaces and store it in line (one whole string now)
             line = " ".join(words)
             shiftedLines.append(line)
-            #We can add the shifted line to the queue to be alphabetized
-            self.queue.put(line)
         return shiftedLines
     #Returns all shifted lines
     def get_shifted_Lines(self) -> list:
         return list(self.shifted_lines)
-    #Returns the queue
-    def getQueue(self) -> Queue:
-        return self.queue
 
 #Class for alphabetizing the lines
 class Alphabetize(Alphabetize_Interface):
     def __init__(self, circularShift: CircularShift_Interface) -> None:
         self.circularShift = circularShift
-        self.file_lines = []
-        self.sorted_shifts = []
-        self.queue = Queue()
+        self.file_lines = None
+        self.sorted_shifts = None
     #Alphabetizes the circular shifts
     def alphabetize(self) -> None:
         # Sort all circular shifts alphabetically and store in a new list
-        #We continuously check the queue for new lines to add to our list
-        while True:
-            #First we get a line
-            line = self.circularShift.getQueue().get()
-            #If the line is "None" then we have reached the end of the input
-            if line is None:
-                #First we add a "None" to our own queue and break
-                self.queue.put(None)
-                break    
-            #If not none, we can append it to our list of lines
-            self.file_lines.append(line)
-            #Then sort the list of lines
-            self.sorted_shifts = sorted(self.file_lines, key=lambda s: s.lower())
-            #And put the sorted list into our queue
-            self.queue.put(self.sorted_shifts)
+        self.file_lines = self.circularShift.get_shifted_Lines()
+        self.sorted_shifts = sorted(self.file_lines, key=lambda s: s.lower())
     #Returns the alphabetized lines
     def get_alphabetized_lines(self) -> list:
         return self.sorted_shifts
     #Gets a certain line out of the array
     def get_circular_shift_by_index(self, index: int) -> list:
         return self.sorted_shifts[index]
-    #Returns the queue for this class
-    def getQueue(self) -> Queue:
-        return self.queue
 
 #Returns the alphabetized array
 class Output(Output_Interface):
     def __init__(self, alphabetize: Alphabetize_Interface) -> None:
         self.alphabetize = alphabetize
     def get_output(self):
-        #We continuously check with alphabetize to see if there are new lines to output
-        while True:
-            #We grab a line
-            line = self.alphabetize.getQueue().get()
-            #If the line is "None", we are free from the loop
-            if line is None:
-                
-                break
-        #Then we can return the final output
         return self.alphabetize.get_alphabetized_lines()
 
 
 class Master_Control:
     #Initializes all objects
     def __init__(self) -> None:
-        #Initialize every object with their constructors
         lineStorage = LineStorage()
         self.csvInput = csv_Input(lineStorage)
         self.circularShift = CircularShift(lineStorage)
@@ -270,29 +198,26 @@ class Master_Control:
         self.output = Output(self.alphabetize)
     #Takes in input, shifts it, and alphabetizes it
     def run(self) -> None:
-        #We make 4 threads for each module and target their while True loops
-        input_thread = threading.Thread(target=self.csvInput.read_input, args=("SE 6362 Project Engine Data.csv",))
-        shift_thread = threading.Thread(target=self.circularShift.retrieve_and_save_lines)
-        alphabetize_thread = threading.Thread(target=self.alphabetize.alphabetize)
-        output_thread = threading.Thread(target=self.run_output)
-
-        #Then we start the 4 threads
-        input_thread.start()
-        shift_thread.start()
-        alphabetize_thread.start()
-        output_thread.start()
-
-        #Then, we can follow along each thread as the inputs finishes
-        #Note: This is still all being done concurrently, this just prevents the program from finishing before all inputs are read
-        input_thread.join()
-        shift_thread.join()
-        alphabetize_thread.join()
-        output_thread.join()
+        csvInput = self.csvInput
+        circularShift = self.circularShift
+        alphabetize = self.alphabetize
+        output = self.output
+        
+        csvInput.read_input("SE 6362 Project Engine Data.csv")
+        csvInput.store_input()
+        
+        circularShift.retrieve_and_save_lines()
+        circularShift.circular_shift()
+        
+        alphabetize.alphabetize()
+        
+        output.get_output()
     #Prints the output to the command line
-    def run_output(self):
+    def getOutput(self):
         print(self.output.get_output())
 
 #Runs the whole program   
 if __name__ == '__main__':
     master = Master_Control()
     master.run()
+    master.getOutput()
