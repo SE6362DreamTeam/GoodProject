@@ -395,6 +395,9 @@ class Master_Control:
     def get_output(self):
         return self.output.get_output()
 
+    def stop_threads(self):
+        self.done_event.set()
+
 
 
 

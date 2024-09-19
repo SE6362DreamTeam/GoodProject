@@ -69,6 +69,8 @@ def init_app(app):
         # Run the KWIC engine to get the output
         output_data = master.get_output()
 
+        master.stop_threads()
+
         # If output_data is not a list, convert it to one
         if isinstance(output_data, str):
             output_data = output_data.split('\n')
