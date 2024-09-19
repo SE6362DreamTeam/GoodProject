@@ -8,6 +8,11 @@
     <p>This is the homepage of the Flask web search application.</p>
 
     <!-- Button to navigate to add URL form -->
-    <a href="{{ url_for('add_url_to_database') }}" class="btn btn-primary mt-3">Add a URL</a>
+    <div>
+        <a href="{{ url_for('add_url_to_database') }}" class="btn btn-primary mt-3">Add a URL</a>
+    </div>
+    <div>
+        <a href="{{ url_for('circular_shift_demo')}}" class="btn btn-primary mt-3">Circular Shift Demo</a>
+    </div>
 </div>
 {% endblock %}

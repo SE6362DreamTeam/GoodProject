@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, MetaData
+from sqlalchemy import Column, Integer, String, MetaData, ForeignKey, Text
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import relationship
 
 # Define the metadata
 metadata = MetaData()
@@ -16,14 +17,28 @@ class URLs(Base):
     search_term = Column(String(255), nullable=False)
     url = Column(String(255), nullable=False)
 
+class ScrapedData(Base):
+    __tablename__ = 'ScrapedData'  # Explicitly set the table name
+
+    # Define columns
+    data_id = Column(Integer, primary_key=True, autoincrement=True)
+    url_id = Column(Integer, ForeignKey('URLs.url_id', ondelete='CASCADE'), nullable=False)
+    scraped_text = Column(Text, nullable=False)
+
+    # Define a relationship to the URLs table
+    url = relationship('URLs', back_populates='scraped_data')
+
 # Define wrapper classes for accessing models and tables
 class Classes:
     def __init__(self):
         self.Urls = URLs
+        self.ScrapedData = ScrapedData
 
 class Tables:
     def __init__(self):
-        self.URLs = URLs.__table__  # Table object reference from Declarative class
+        self.URLs = URLs.__table__
+        self.ScrapedData = ScrapedData.__table__
+
 
 class Map:
     def __init__(self):

@@ -1,7 +1,10 @@
+import threading
+
 from flask import render_template, redirect, url_for, flash
 from app.forms import URLForm
 from app.db_map import URLs
 from app.db import db
+import KWIC.KWIC2
 
 
 def init_app(app):
@@ -39,3 +42,44 @@ def init_app(app):
 
         # Render the form template and pass the URLs to the template
         return render_template('add_url_to_database.html', form=form, urls=urls)
+
+
+
+
+
+
+
+
+    @app.route('/circular_shift_demo', methods=['GET', 'POST'])
+    def circular_shift_demo():
+
+        # Create an instance of Master_Control
+        master = KWIC.KWIC2.Master_Control()
+
+        # Run the KWIC engine in a separate thread
+        process_thread = threading.Thread(target=master.run)
+        process_thread.start()
+
+        # Wait for the event to signal completion
+        #master.done_event.wait()
+
+
+
+        # Run the KWIC engine to get the output
+        output_data = master.get_output()
+
+        # If output_data is not a list, convert it to one
+        if isinstance(output_data, str):
+            output_data = output_data.split('\n')
+
+        # If it's empty or None, provide a default message
+        if not output_data:
+            output_data = ["No output data generated"]
+
+        # Render the output in an HTML template
+        return render_template('output.html', output_data=output_data)
+
+
+
+
+

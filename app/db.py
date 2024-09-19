@@ -23,3 +23,8 @@ def init_db(app):
     except Exception as e:
         logging.error("Failed to connect to the database.", exc_info=True)
         raise e
+
+
+def get_engine():
+    """Get the database engine for non-Flask parts of the app."""
+    return db.engine
