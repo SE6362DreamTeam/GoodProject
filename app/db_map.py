@@ -17,6 +17,9 @@ class URLs(Base):
     search_term = Column(String(255), nullable=False)
     url = Column(String(255), nullable=False)
 
+    # Define a relationship to the ScrapedData table
+    scraped_data = relationship('ScrapedData', back_populates='url', cascade="all, delete-orphan")
+
 class ScrapedData(Base):
     __tablename__ = 'ScrapedData'  # Explicitly set the table name
 

@@ -1,10 +1,10 @@
 import csv
 
 import threading
-import KWIC.web_scraper
+import app.web_scraper
 import app.db
 from sqlalchemy.orm import sessionmaker
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from queue import Queue
 
 

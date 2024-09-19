@@ -1,5 +1,5 @@
 from flask import Flask
-from app.db import db  # SQLAlchemy instance
+from app.db import db, init_db  # SQLAlchemy instance
 from dotenv import load_dotenv
 import os
 from app.db_map import Base, Map  # Assuming Base is your declarative base class
@@ -22,7 +22,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize the database with the app
-    db.init_app(app)
+    init_db(app)
 
     # Create database tables if they don't exist
     with app.app_context():

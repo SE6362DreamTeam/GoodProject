@@ -5,6 +5,7 @@ from app.forms import URLForm
 from app.db_map import URLs
 from app.db import db
 import KWIC.KWIC2
+from app.web_scraper import Web_Scraper
 
 
 def init_app(app):
@@ -80,6 +81,24 @@ def init_app(app):
         return render_template('output.html', output_data=output_data)
 
 
+    @app.route('/scrape_web_pages', methods=['GET', 'POST'])
+    def scrape_web_pages():
+        try:
+            scraper = Web_Scraper()
+            scraper.send_scraped_text_to_database()
 
+            #if sucess
+            return render_template('scrape_web_pages.html', success=True)
+
+        except Exception as e:
+            # If there's an error, log it and pass success=False to the template
+            print(f"Error occurred during scraping: {str(e)}")
+            return render_template('scrape_web_pages.html', success=False)
+
+
+
+
+
+        return render_template('scrape_web_pages.html')
 
 
