@@ -1,4 +1,5 @@
 import csv
+import queue
 
 import threading
 import app.web_scraper
@@ -240,7 +241,11 @@ class CircularShift(CircularShift_Interface):
         # Continuously check the lineStorage queue for more lines
         while True:
             # Grab a line from the queue
-            line = self.lineStorage.getQueue().get()
+            try:
+                line = self.lineStorage.getQueue().get(timeout=5)
+            except queue.Empty:
+                # Break out if no input is received within the timeout
+                break
             # If we grab a "None", then we are done reading input
             if line is None:
                 # So we add a "None" to our own queue
@@ -307,7 +312,11 @@ class Alphabetize(Alphabetize_Interface):
         # We continuously check the queue for new lines to add to our list
         while True:
             # First we get a line
-            line = self.circularShift.getQueue().get()
+            try:
+                line = self.circularShift.getQueue().get(timeout=5)
+            except queue.Empty:
+                # Break out if no input is received within the timeout
+                break
             # If the line is "None" then we have reached the end of the input
             if line is None:
                 # First we add a "None" to our own queue and break
@@ -341,8 +350,11 @@ class Output(Output_Interface):
     def get_output(self):
         # We continuously check with alphabetize to see if there are new lines to output
         while True:
-            # We grab a line
-            line = self.alphabetize.getQueue().get()
+
+            try:
+                line = self.alphabetize.getQueue().get(timeout=5)
+            except queue.Empty:
+                break
             # If the line is "None", we are free from the loop
             if line is None:
                 break
