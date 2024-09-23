@@ -57,7 +57,7 @@ Lennon Crow - 100%
 Logan Dane - 100%
 
 ### Project Document
-[Link to Project Document] (https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr)
+Link to Project Document: https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr
 
 ### Team URL
 Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se6362dreamteam.github.io/GoodProject/)
