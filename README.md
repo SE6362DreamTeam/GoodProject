@@ -63,7 +63,7 @@ Link to Project Document: https://cometmail-my.sharepoint.com/:w:/g/personal/mdp
 Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se6362dreamteam.github.io/GoodProject/)
 
 ### Meeting Summaries
-Date: 8/26/24
+**Date: 8/26/24**
 
 Location: Virtual
 
@@ -82,7 +82,8 @@ Summary:
 •	Project GitHub and Website was set up
 
 
-Date: 9/4/24
+
+**Date: 9/4/24**
 
 Location: Virtual
 
@@ -100,7 +101,9 @@ Summary:
 
 •	Determined functional requirements and non-functional requirements
 
-Date: 9/9/24
+
+
+**Date: 9/9/24**
 
 Location: Virtual
 
@@ -120,7 +123,9 @@ Summary:
 
 •	Determined implementation tasks
 
-Date: 9/16/24
+
+
+**Date: 9/16/24**
 
 Location: Virtual
 
@@ -138,7 +143,9 @@ Summary:
 
 •	Worked on project document
 
-Date: 9/23/24
+
+
+**Date: 9/23/24**
 
 Location: Virtual
 
