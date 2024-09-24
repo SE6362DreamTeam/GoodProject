@@ -70,6 +70,7 @@ def init_app(app):
         output_data = master.get_output()
 
         master.stop_threads()
+        process_thread.join()
 
         # If output_data is not a list, convert it to one
         if isinstance(output_data, str):

@@ -9,7 +9,6 @@ from abc import abstractmethod
 from queue import Queue
 
 
-
 # Interface for the LineStorage class
 class LineStorage_Interface:
     @abstractmethod
@@ -126,9 +125,6 @@ class Output_Interface:
         pass
 
 
-
-
-
 # Class for reading the input from a csv
 class csv_Input(CSV_Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
@@ -174,9 +170,6 @@ class csv_Input(CSV_Input_Interface):
 
 
 
-
-
-
 # Class for reading the input from a database
 class database_Input(CSV_Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
@@ -186,16 +179,6 @@ class database_Input(CSV_Input_Interface):
 
     def read_input(self, file_name) -> None:
         session = self.Session()
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -399,7 +382,6 @@ class Master_Control:
         # ends threads
 
 
-
     # Prints the output to the command line
     def run_output(self):
         print(self.output.get_output())
@@ -409,8 +391,6 @@ class Master_Control:
 
     def stop_threads(self):
         self.done_event.set()
-
-
 
 
 
