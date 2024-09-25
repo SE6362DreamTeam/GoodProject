@@ -57,7 +57,7 @@ Lennon Crow - 100%
 Logan Dane - 100%
 
 ### Project Document
-Link to Project Document: https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr
+Link to Project Document: [https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr](https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr)
 
 ### Team URL
 Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se6362dreamteam.github.io/GoodProject/)
@@ -67,13 +67,13 @@ Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se63
 
 Location: Virtual
 
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
 Agenda: 
 
 •	Work on Preliminary Project Plan
 
 •	Set up project GitHub
-
-Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Summary: 
 
@@ -87,13 +87,13 @@ Summary:
 
 Location: Virtual
 
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
 Agenda
 
 •	Discuss project tech stack
 
 •	Determine requirements of project
-
-Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Summary: 
 
@@ -107,13 +107,13 @@ Summary:
 
 Location: Virtual
 
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
 Agenda
 
 •	Discuss architectural style and pattern
 
 •	Determine tasks for document and implementation
-
-Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Summary:
 
@@ -129,13 +129,13 @@ Summary:
 
 Location: Virtual
 
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
 Agenda
 
 •	Work on document
 
 •	Check up on implementation progress
-
-Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Summary:
 
@@ -149,13 +149,13 @@ Summary:
 
 Location: Virtual
 
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
 Agenda
 
 •	Work on presentation
 
 •	Review project document
-
-Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Summary:
 
