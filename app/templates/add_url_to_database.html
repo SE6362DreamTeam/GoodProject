@@ -3,6 +3,7 @@
 {% block title %}Add URL{% endblock %}
 
 {% block content %}
+<div class='container output-box'>
     <h1>Add URL</h1>
     <form method="POST" action="{{ url_for('add_url_to_database') }}">
         {{ form.hidden_tag() }}
@@ -33,7 +34,8 @@
 
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
-
+</div>
+<div class='container output-box'>
     <h2>Stored URLs</h2>
     <table border="1" class="table mt-3">
         <thead>
@@ -57,4 +59,6 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% endblock %}
+
