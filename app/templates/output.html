@@ -5,12 +5,8 @@
 {% block content %}
 <div class="container">
     <h1>KWIC Engine Output</h1>
-
-
-    <ul>
-        {% for line in output_data %}
-            <li>{{ line }}</li>
-        {% endfor %}
-    </ul>
+    <div>
+        {{ output_data|safe }}
+    </div>
 </div>
 {% endblock %}

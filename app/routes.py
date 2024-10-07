@@ -66,23 +66,17 @@ def init_app(app):
 
 
 
-        # Run the KWIC engine to get the output
-        output_data = master.get_output()
+        
 
         master.stop_threads()
         process_thread.join()
 
-
-        # If output_data is not a list, convert it to one
-        if isinstance(output_data, str):
-            output_data = output_data.split('\n')
-
-        # If it's empty or None, provide a default message
-        if not output_data:
-            output_data = ["No output data generated"]
+        # Run the KWIC engine to get the output
+        output_data = master.get_output()
 
         # Render the output in an HTML template
         return render_template('output.html', output_data=output_data)
+
 
 
     @app.route('/scrape_web_pages', methods=['GET', 'POST'])

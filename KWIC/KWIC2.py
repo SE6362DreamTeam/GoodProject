@@ -37,7 +37,7 @@ class LineStorage_Interface:
 
 
 # Interface for the Input class
-class CSV_Input_Interface:
+class Input_Interface:
     @abstractmethod
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         pass
@@ -49,18 +49,8 @@ class CSV_Input_Interface:
     @abstractmethod
     def store_input(self) -> None:
         pass
-
-class Database_Input_Interface:
     @abstractmethod
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
-        pass
-
-    @abstractmethod
-    def read_input(self) -> None:
-        pass
-
-    @abstractmethod
-    def store_input(self) -> None:
+    def return_history(self) -> None:
         pass
 
 # Interface for the CircularShift class
@@ -85,9 +75,12 @@ class CircularShift_Interface:
     def get_shifted_Lines(self) -> list:
         pass
 
-    abstractmethod
-
+    @abstractmethod
     def getQueue(self) -> Queue:
+        pass
+    
+    @abstractmethod
+    def getHistory(self) -> dict:
         pass
 
 
@@ -112,6 +105,10 @@ class Alphabetize_Interface:
     @abstractmethod
     def getQueue(self) -> Queue:
         pass
+    
+    @abstractmethod
+    def getHistory(self) -> dict:
+        pass
 
 
 # Interface for the Output class
@@ -126,7 +123,7 @@ class Output_Interface:
 
 
 # Class for reading the input from a csv
-class csv_Input(CSV_Input_Interface):
+class csv_Input(Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         self.lineStorage = lineStorage
         self.file_lines = {}
@@ -171,7 +168,7 @@ class csv_Input(CSV_Input_Interface):
 
 
 # Class for reading the input from a database
-class database_Input(CSV_Input_Interface):
+class database_Input(Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         self.lineStorage = lineStorage
         self.file_lines = {}
@@ -216,7 +213,7 @@ class CircularShift(CircularShift_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         self.lineStorage = lineStorage
         self.file_lines = None
-        self.shifted_lines = None
+        self.shifted_lines = {}
         self.queue = Queue()
 
     # Retrieves the lines form line storage and saves them into this object instance
@@ -237,21 +234,12 @@ class CircularShift(CircularShift_Interface):
                 self.file_lines = list(self.lineStorage.getAllLines())
                 break
             # If it is not none, we need to shift the line
-            self.shift_current_line(line)
-
-    # Shifts every line stored and saves them
-    # This method is actually not used in this implementation
-    def circular_shift(self) -> None:
-        newLines = []
-        for line in self.file_lines:
-            shiftedLines = self.shift_current_line(line)
-            if (shiftedLines != None):
-                for shiftedLine in shiftedLines:
-                    newLines.append(shiftedLine)
-        self.shifted_lines = newLines
+            shiftList = self.shift_current_line(line)
+            self.shifted_lines[line] = shiftList
+            
 
     # Shifts a single line
-    def shift_current_line(self, current_line: str) -> str:
+    def shift_current_line(self, current_line: str):
         # Split the current line by spaces
         words = current_line.split(" ")
 
@@ -279,6 +267,9 @@ class CircularShift(CircularShift_Interface):
     # Returns the queue
     def getQueue(self) -> Queue:
         return self.queue
+    
+    def getHistory(self) -> dict:
+        return self.shifted_lines
 
 
 # Class for alphabetizing the lines
@@ -287,6 +278,7 @@ class Alphabetize(Alphabetize_Interface):
         self.circularShift = circularShift
         self.file_lines = []
         self.sorted_shifts = []
+        self.sort_history = {}
         self.queue = Queue()
 
     # Alphabetizes the circular shifts
@@ -311,6 +303,8 @@ class Alphabetize(Alphabetize_Interface):
             self.sorted_shifts = sorted(self.file_lines, key=lambda s: s.lower())
             # And put the sorted list into our queue
             self.queue.put(self.sorted_shifts)
+            self.sort_history[line] = self.sorted_shifts
+        return self.sort_history
 
     # Returns the alphabetized lines
     def get_alphabetized_lines(self) -> list:
@@ -323,6 +317,9 @@ class Alphabetize(Alphabetize_Interface):
     # Returns the queue for this class
     def getQueue(self) -> Queue:
         return self.queue
+    
+    def getHistory(self) -> dict:
+        return self.sort_history
 
 
 # Returns the alphabetized array
@@ -379,6 +376,11 @@ class Master_Control:
         alphabetize_thread.join()
         output_thread.join()
 
+        self.shiftHistory = self.circularShift.getHistory()
+        self.alphabetizationHistory = self.alphabetize.getHistory()
+        #print(self.shiftHistory)
+        #print(self.alphabetizationHistory)
+        
         # ends threads
 
 
@@ -387,7 +389,27 @@ class Master_Control:
         print(self.output.get_output())
 
     def get_output(self):
-        return self.output.get_output()
+        outputString = ""
+        listKeys = self.shiftHistory.keys()
+        lineCount = 1
+        for key in listKeys:
+            outputString += f"<h1><strong>LINE {lineCount}:</strong> <span style=\"font-weight:normal\">{key}</span></h1>\n"
+            listShifts = self.shiftHistory[key]
+            shiftCount = 1
+            for shift in listShifts:
+                outputString += f"<h2><strong>SHIFT {shiftCount}:</strong> <span style=\"font-weight:normal\">{shift}</span></h2>\n"
+                alphabetization = self.alphabetizationHistory[shift]
+                outputString += "<h3><strong>NEW ALPHABETIZATION:</strong></h3>\n<ul>\n"
+                for element in alphabetization:
+                    outputString += f"<li>{element}</li>\n"
+                outputString += "</ul>\n"
+                shiftCount += 1
+            lineCount += 1
+            outputString += "\n-----------------------------------------------------------------------\n\n"
+        print(outputString)
+        
+        return outputString
+
 
     def stop_threads(self):
         self.done_event.set()
