@@ -393,6 +393,7 @@ class Master_Control:
         listKeys = self.shiftHistory.keys()
         lineCount = 1
         for key in listKeys:
+            outputString += f"<div class='output-box'>\n"
             outputString += f"<h1><strong>LINE {lineCount}:</strong> <span style=\"font-weight:normal\">{key}</span></h1>\n"
             listShifts = self.shiftHistory[key]
             shiftCount = 1
@@ -405,10 +406,12 @@ class Master_Control:
                 outputString += "</ul>\n"
                 shiftCount += 1
             lineCount += 1
-            outputString += "\n-----------------------------------------------------------------------\n\n"
+            outputString += "</div>\n"
         print(outputString)
         
         return outputString
+
+
 
 
     def stop_threads(self):

@@ -1,0 +1,82 @@
+/* styles.css */
+/* body styling */
+body {
+    font-family: Arial, sans-serif;
+    /* Light grey background color */
+    background-color: #f4f4f9;
+    /* Dark grey text color */
+    color: #333;
+    /* Removes default margin */
+    margin: 0;
+    /* Removes default padding */
+    padding: 0;
+}
+
+/* Container styling */
+.container {
+    /* Sets the container width to 80% of the viewport */
+    width: 80%;
+    /* Centers the container horizontally */
+    margin: 0 auto;
+    /* Adds padding inside the container */
+    padding: 20px;
+}
+
+/* Output box styling */
+.output-box {
+    /* White background color */
+    background-color: #fff;
+    /* Light grey border */
+    border: 1px solid #ddd;
+    /* Rounded corners */
+    border-radius: 8px;
+    /* Drop shadow */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Space below each output box */
+    margin-bottom: 20px;
+    /* Padding inside each output box */
+    padding: 20px;
+}
+
+/* Heading styling */
+h1, h2, h3 {
+    /* Bottom margin to separate headings from content */
+    margin: 0 0 10px;
+}
+
+/* Specific heading styles */
+h1 {
+    /* Larger font size for main headings */
+    font-size: 1.8em;
+    /* Dark blue-grey color */
+    color: #2c3e50;
+}
+
+h2 {
+    /* Medium font size for subheadings */
+    font-size: 1.5em;
+    /* Lighter blue-grey color */
+    color: #34495e;
+}
+
+h3 {
+    /* Smaller font size for tertiary headings */
+    font-size: 1.2em;
+    /* Lightest blue-grey color */
+    color: #7f8c8d;
+}
+
+/* List styling */
+ul {
+    /* Bulleted list */
+    list-style-type: disc;
+    /* Indentation for list items */
+    padding-left: 20px;
+}
+
+li {
+    /* Standard font size for list items */
+    font-size: 1em;
+    /* Black text color */
+    color: #000;
+}
