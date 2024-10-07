@@ -163,6 +163,52 @@ Summary:
 
 •	Completed project document
 
+## ------------------------------------------------------------------------------------------------------
+## Project Phase I Final
+
+### Team Leader
+Lennon Crow
+
+### Project Members
+Mansi Patel - mdp190006
+
+Lennon Crow - lpc210001
+
+Logan Dane - lcd190002
+
+### Percentages of Contribution
+Mansi Patel - 100%
+
+Lennon Crow - 100%
+
+Logan Dane - 100%
+
+### Project Document
+Link to Project Document: [https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr](https://cometmail-my.sharepoint.com/:w:/g/personal/mdp190006_utdallas_edu/EQo363LjEm1CnkhcyXyyNyMBFGh-joW1fkx6gjnvwIaRog?e=sZjvNr)
+
+### Team URL
+Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se6362dreamteam.github.io/GoodProject/)
+
+### Meeting Summaries
+**Date: 9/7/24**
+
+Location: Virtual
+
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
+Agenda: 
+
+•	Review changes to document after implementing feedback
+
+•	Review changes to program output after implementing feedback
+
+Summary: 
+
+•	Completed document changes
+
+•	Cleaned up project output
+
+
 
 
 
