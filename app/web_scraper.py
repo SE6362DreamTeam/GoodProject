@@ -69,6 +69,7 @@ class Web_Scraper:
                     url = url_data['url']
 
 
+
                     already_scraped = db.session.query(app.db_map.ScrapedData).filter_by(url_id=url_id).first()
 
                     if already_scraped:
