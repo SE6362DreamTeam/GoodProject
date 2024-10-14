@@ -38,20 +38,18 @@ class Web_Scraper:
 
 
 
+    def scrape_webpage(self, url, url_id):
+        # Check if the URL has already been scraped
 
-
-
-
-    def scrape_webpage(self, url):
         try:
             # Fetch the web page content
             response = requests.get(url)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                page_text = soup.get_text(separator=' ', strip=True)
+                page_text = soup.get_text(separator='$', strip=True)
                 return page_text
             else:
-                return None
+                return "None"
 
         except Exception as e:
             print(f"Failed to scrape {url}: {str(e)}")
@@ -70,15 +68,21 @@ class Web_Scraper:
                     url_id = url_data['id']
                     url = url_data['url']
 
-                    # Scrape the webpage content
-                    scraped_text = self.scrape_webpage(url)
+
+                    already_scraped = db.session.query(app.db_map.ScrapedData).filter_by(url_id=url_id).first()
+
+                    if already_scraped:
+                        continue
+                    else:
+                        # Scrape the webpage content
+
+                        scraped_text = self.scrape_webpage(url, url_id)
+                        print(f"Web page \"{url}\" has been scraped.")
+
 
                     if scraped_text:
                         # Create and store the ScrapedData object
-                        scraped_data = app.db_map.ScrapedData(
-                            url_id=url_id,
-                            scraped_text=scraped_text
-                        )
+                        scraped_data = app.db_map.ScrapedData(url_id=url_id,scraped_text=scraped_text)
                         db.session.add(scraped_data)
 
                 # Commit the session after adding all scraped data
