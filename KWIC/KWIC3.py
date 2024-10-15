@@ -1,41 +1,63 @@
-'''
 import csv
 import queue
 
 import threading
 
-#from flask import current_app
-
+# from flask import current_app
+from flask import Flask
 import app.web_scraper
 import app.db
-#from sqlalchemy.orm import sessionmaker
+# from sqlalchemy.orm import sessionmaker
 from abc import abstractmethod
 from queue import Queue
 import app.db_map
 from app.db import db
 from flask import current_app
+#from run import app
+from sqlalchemy.orm import joinedload
 
 
-# Interface for the LineStorage class
-class LineStorage_Interface:
+# Interface for Record
+class Record_interface:
+
+    @abstractmethod
+    def __init__(self, scraped_text:str, url:str, data_id:int, url_id:int) -> None:
+        pass
+
+    def get_scraped_text(self) -> str:
+        pass
+
+    def get_url(self) -> str:
+        pass
+
+    def get_data_id(self) -> int:
+        pass
+
+    def get_url_id(self) -> int:
+        pass
+
+
+
+# Interface for the RecordStorage class
+class RecordStorage_Interface:
     @abstractmethod
     def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def store_input(self, lineDict: dict) -> None:
+    def store_input(self, recordDict: dict) -> None:
         pass
 
     @abstractmethod
-    def getLine(self, line: int):
+    def getRecord(self, record: int):
         pass
 
     @abstractmethod
-    def getAllLines(self):
+    def getAllRecords(self):
         pass
 
     @abstractmethod
-    def addLineToQueue(self, line: str):
+    def addRecordToQueue(self, record: str):
         pass
 
     @abstractmethod
@@ -46,28 +68,27 @@ class LineStorage_Interface:
 # Interface for the Input class
 class Input_Interface:
     @abstractmethod
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
+    def __init__(self, recordStorage: RecordStorage_Interface) -> None:
         pass
 
     @abstractmethod
     def read_input(self) -> None:
         pass
 
-    @abstractmethod
-    def store_input(self) -> None:
-        pass
+
     @abstractmethod
     def return_history(self) -> None:
         pass
 
+
 # Interface for the CircularShift class
 class CircularShift_Interface:
     @abstractmethod
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
+    def __init__(self, recordStorage: RecordStorage_Interface) -> None:
         pass
 
     @abstractmethod
-    def retrieve_and_save_lines(self) -> None:
+    def retrieve_and_save_records(self) -> None:
         pass
 
     @abstractmethod
@@ -75,17 +96,17 @@ class CircularShift_Interface:
         pass
 
     @abstractmethod
-    def shift_current_line(self, current_line: str) -> str:
+    def shift_current_record(self, current_record: str) -> str:
         pass
 
     @abstractmethod
-    def get_shifted_Lines(self) -> list:
+    def get_shifted_records(self) -> list:
         pass
 
     @abstractmethod
     def getQueue(self) -> Queue:
         pass
-    
+
     @abstractmethod
     def getHistory(self) -> dict:
         pass
@@ -102,7 +123,7 @@ class Alphabetize_Interface:
         pass
 
     @abstractmethod
-    def get_alphabetized_lines(self) -> list:
+    def get_alphabetized_records(self) -> list:
         pass
 
     @abstractmethod
@@ -112,7 +133,7 @@ class Alphabetize_Interface:
     @abstractmethod
     def getQueue(self) -> Queue:
         pass
-    
+
     @abstractmethod
     def getHistory(self) -> dict:
         pass
@@ -129,17 +150,40 @@ class Output_Interface:
         pass
 
 
+
+class ScrapedRecord(Record_interface):
+
+    def __init__(self, scraped_text: str, url: str, search_term: str, data_id: int, url_id: int) -> None:
+        self.scraped_text = scraped_text
+        self.url = url
+        self.search_term = search_term
+        self.data_id = data_id
+        self.url_id = url_id
+
+    def get_scraped_text(self) -> str:
+        return self.scraped_text
+
+    def get_url(self) -> str:
+        return self.url
+
+    def get_data_id(self) -> int:
+        return self.data_id
+
+
+
+'''
+
 # Class for reading the input from a csv
 class csv_Input(Input_Interface):
     def __init__(self, lineStorage: LineStorage_Interface) -> None:
         self.lineStorage = lineStorage
-        self.file_lines = {}
+        self.records = {}
 
     def read_input(self, file_name) -> None:
         # Create a dictionary to hold each line we read in
         # Key: search phrase
         # Value: list of URLs for that search phrase
-        file_lines = dict()
+        records = dict()
 
         # Open the input file (csv format)
         with open(file_name, "r") as f:
@@ -155,69 +199,85 @@ class csv_Input(Input_Interface):
                     # term_length will equal how many URLs will be added as a value for the current search phrase
                     term_length = len(line[0].split())
                     # Create a new entry in the dictionary if there is not one for this search phrase already
-                    if file_lines.get(line[0]) == None:
+                    if records.get(line[0]) == None:
                         # Key is the query term
                         # Value is a list of URLs for this search phrase
-                        file_lines[line[0]] = list()
+                        records[line[0]] = list()
                     # Go through each URL of the current line and add it to the value
                     for j in range(1, term_length + 1):
-                        (file_lines[line[0]]).append(line[j])
+                        (records[line[0]]).append(line[j])
                     # Add the line to the lineStorage queue for further processing
                     self.lineStorage.addLineToQueue(line[0])
-        self.file_lines = file_lines
+        self.records = records
         # Add a "None" to the lineStorage queue to show that we are done reading input
         self.lineStorage.addLineToQueue(None)
 
-    # Stores the input lines into the lineStorage object instance
-    def store_input(self) -> None:
-        self.lineStorage.store_input(self.file_lines)
 
-
+'''
 
 # Class for reading the input from a database
 class database_input(Input_Interface):
 
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
-        self.lineStorage = lineStorage
-        self.file_lines = {}
+    def __init__(self, recordStorage: RecordStorage_Interface, app) -> None:
+        self.recordStorage = recordStorage
+        self.app = app
 
     def read_input(self) -> None:
-        with current_app.app_context():
-            # Query all records from the ScrapedData table
-            scraped_data = db.session.query(app.db_map.ScrapedData).all()
+        with self.app.app_context():
+            # Perform a join to retrieve related data from ScrapedData and URLs
+            scraped_data = db.session.query(app.db_map.ScrapedData).options(joinedload(app.db_map.ScrapedData.url)).all()
 
-        
+            if not scraped_data:
+                return
+
+            for data in scraped_data:
+                # Access data from both ScrapedData and the related URLs record
+                scraped_text = data.scraped_text
+                url = data.url.url  # Access the actual URL string from the URLs table
+                search_term = data.url.search_term  # Access the search term from the URLs table
+                data_id = data.data_id
+                url_id = data.url.url_id
+
+                # Create the ScrapedRecord object with all required attributes
+                record_object = ScrapedRecord(
+                    scraped_text=scraped_text,
+                    url=url,
+                    search_term=search_term,
+                    data_id=data_id,
+                    url_id=url_id
+                )
+
+                # Add the record object to the queue
+                self.recordStorage.addRecordToQueue(record_object)
+
+            # Optionally add a sentinel value (e.g., None) to signal the end of input
+            self.recordStorage.addRecordToQueue(None)
 
 
 
 
 
 
-
-
-
-
-# Class for keeping all lines from a site
-class LineStorage(LineStorage_Interface):
+class RecordStorage(RecordStorage_Interface):
     def __init__(self) -> None:
-        self.file_lines = {}
+        self.records = {}
         self.queue = Queue()
 
-    # Stores the input into the file_lines variable
-    def store_input(self, line_Dict: dict) -> None:
-        self.file_lines = line_Dict
+    # Stores the input into the records variable
+    def store_input(self, record_Dict: dict) -> None:
+        self.records = record_Dict
 
-    # Gets the line from the given index
-    def getLine(self, lineIndex: int):
-        return list(self.file_lines)[lineIndex]
+    # Gets the record from the given index
+    def getRecord(self, recordIndex: int):
+        return list(self.records)[recordIndex]
 
-    # Returns all lines
-    def getAllLines(self):
-        return self.file_lines
+    # Returns all records
+    def getAllRecords(self):
+        return self.records
 
-    # Adds a line to the queue
-    def addLineToQueue(self, line: str):
-        self.queue.put(line)
+    # Adds a record to the queue
+    def addRecordToQueue(self, record: ScrapedRecord) -> None:
+        self.queue.put(record)
         pass
 
     # Gets the queue
@@ -225,75 +285,87 @@ class LineStorage(LineStorage_Interface):
         return self.queue
 
 
-# Class for circularly shifting lines
+
+
+
+
+
+
+# Class for circularly shifting records
 class CircularShift(CircularShift_Interface):
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
-        self.lineStorage = lineStorage
-        self.file_lines = None
-        self.shifted_lines = {}
+    def __init__(self, recordStorage: RecordStorage_Interface) -> None:
+        self.recordStorage = recordStorage
+        self.records = None
+        self.shifted_records = {}
         self.queue = Queue()
 
-    # Retrieves the lines form line storage and saves them into this object instance
-    def retrieve_and_save_lines(self) -> None:
-        # Continuously check the lineStorage queue for more lines
+    # Retrieves the records form records storage and saves them into this object instance
+    def retrieve_and_save_records(self) -> None:
+        # Continuously check the recordStorage queue for more records
         while True:
-            # Grab a line from the queue
+            # Grab a record from the queue
             try:
-                line = self.lineStorage.getQueue().get(timeout=5)
+                record = self.recordStorage.getQueue().get(timeout=5)
             except queue.Empty:
                 # Break out if no input is received within the timeout
                 break
             # If we grab a "None", then we are done reading input
-            if line is None:
+            if record is None:
                 # So we add a "None" to our own queue
                 self.queue.put(None)
-                # Then we can grab the entirety of the file lines for record keeping
-                self.file_lines = list(self.lineStorage.getAllLines())
+                # Then we can grab the entirety of the file records for record keeping
+                self.records = list(self.recordStorage.getAllRecords())
                 break
-            # If it is not none, we need to shift the line
-            shiftList = self.shift_current_line(line)
-            self.shifted_lines[line] = shiftList
-            
+            # If it is not none, we need to shift the record
+            shiftList = self.shift_current_record(record)
+            self.shifted_records[record] = shiftList
 
-    # Shifts a single line
-    def shift_current_line(self, current_line: str):
-        # Split the current line by spaces
-        words = current_line.split(" ")
+    # Shifts a single record
+    def shift_current_record(self, current_record: str):
+        # Split the current record by spaces
+        words = current_record.split(" ")
 
-        # If there are n-1 words in a line, then n circular shifts must occur for the line
+        # If there are n-1 words in a record, then n circular shifts must occur for the record
         # to return to its original state
         num_iterations = len(words)
-        # Iterate until n iterations is reached (should have original line at nth iteration)
-        shiftedLines = []
+        # Iterate until n iterations is reached (should have original record at nth iteration)
+        shiftedRecords = []
         for i in range(num_iterations):
             # Remove the first word in words array
             popped_term = words.pop(0)
             # Add it to the end of words array
             words.append(popped_term)
-            # Join the words array with spaces and store it in line (one whole string now)
-            line = " ".join(words)
-            shiftedLines.append(line)
-            # We can add the shifted line to the queue to be alphabetized
-            self.queue.put(line)
-        return shiftedLines
+            # Join the words array with spaces and store it in record (one whole string now)
+            record = " ".join(words)
+            shiftedRecords.append(record)
+            # We can add the shifted record to the queue to be alphabetized
+            self.queue.put(record)
+        return shiftedRecords
 
-    # Returns all shifted lines
-    def get_shifted_Lines(self) -> list:
-        return list(self.shifted_lines)
+    # Returns all shifted records
+    def get_shifted_Records(self) -> list:
+        return list(self.shifted_records)
 
     # Returns the queue
     def getQueue(self) -> Queue:
         return self.queue
-    
+
     def getHistory(self) -> dict:
-        return self.shifted_lines
+        return self.shifted_records
 
 
-# Class for alphabetizing the lines
+
+
+
+
+
+
+
+# Class for alphabetizing the records
 class Alphabetize(Alphabetize_Interface):
     def __init__(self, circularShift: CircularShift_Interface) -> None:
         self.circularShift = circularShift
-        self.file_lines = []
+        self.records = []
         self.sorted_shifts = []
         self.sort_history = {}
         self.queue = Queue()
@@ -301,42 +373,50 @@ class Alphabetize(Alphabetize_Interface):
     # Alphabetizes the circular shifts
     def alphabetize(self) -> None:
         # Sort all circular shifts alphabetically and store in a new list
-        # We continuously check the queue for new lines to add to our list
+        # We continuously check the queue for new records to add to our list
         while True:
-            # First we get a line
+            # First we get a record
             try:
-                line = self.circularShift.getQueue().get(timeout=5)
+                record = self.circularShift.getQueue().get(timeout=5)
             except queue.Empty:
                 # Break out if no input is received within the timeout
                 break
-            # If the line is "None" then we have reached the end of the input
-            if line is None:
+            # If the record is "None" then we have reached the end of the input
+            if record is None:
                 # First we add a "None" to our own queue and break
                 self.queue.put(None)
                 break
-                # If not none, we can append it to our list of lines
-            self.file_lines.append(line)
-            # Then sort the list of lines
-            self.sorted_shifts = sorted(self.file_lines, key=lambda s: s.lower())
+                # If not none, we can append it to our list of records
+            self.records.append(record)
+            # Then sort the list of records
+            self.sorted_shifts = sorted(self.records, key=lambda s: s.lower())
             # And put the sorted list into our queue
             self.queue.put(self.sorted_shifts)
-            self.sort_history[line] = self.sorted_shifts
+            self.sort_history[record] = self.sorted_shifts
         return self.sort_history
 
-    # Returns the alphabetized lines
-    def get_alphabetized_lines(self) -> list:
+    # Returns the alphabetized records
+    def get_alphabetized_records(self) -> list:
         return self.sorted_shifts
 
-    # Gets a certain line out of the array
+    # Gets a certain record out of the array
     def get_circular_shift_by_index(self, index: int) -> list:
         return self.sorted_shifts[index]
 
     # Returns the queue for this class
     def getQueue(self) -> Queue:
         return self.queue
-    
+
     def getHistory(self) -> dict:
         return self.sort_history
+
+
+
+
+
+
+
+
 
 
 # Returns the alphabetized array
@@ -345,31 +425,39 @@ class Output(Output_Interface):
         self.alphabetize = alphabetize
 
     def get_output(self):
-        # We continuously check with alphabetize to see if there are new lines to output
+        # We continuously check with alphabetize to see if there are new records to output
         while True:
 
             try:
-                line = self.alphabetize.getQueue().get(timeout=5)
+                record = self.alphabetize.getQueue().get(timeout=5)
             except queue.Empty:
                 break
-            # If the line is "None", we are free from the loop
-            if line is None:
+            # If the record is "None", we are free from the loop
+            if record is None:
                 break
         # Then we can return the final output
-        return self.alphabetize.get_alphabetized_lines()
+        return self.alphabetize.get_alphabetized_records()
+
+
+
+
+
+
+
 
 
 class Master_Control:
     # Initializes all objects
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
         # Initialize every object with their constructors
-        lineStorage = LineStorage()
-        self.csvInput = csv_Input(lineStorage)
-        self.circularShift = CircularShift(lineStorage)
+        self.app = app
+        recordStorage = RecordStorage()
+        self.databaseInput = database_input(recordStorage, app)
+        self.circularShift = CircularShift(recordStorage)
         self.alphabetize = Alphabetize(self.circularShift)
         self.output = Output(self.alphabetize)
 
-        self.database_input = database_input(lineStorage)
+        #self.database_input = database_input(self.recordStorage)
 
         # Ends threads
         self.done_event = threading.Event()
@@ -377,8 +465,8 @@ class Master_Control:
     # Takes in input, shifts it, and alphabetizes it
     def run(self) -> None:
         # We make 4 threads for each module and target their while True loops
-        input_thread = threading.Thread(target=self.csvInput.read_input, args=("KWIC/SE 6362 Project Engine Data.csv",))
-        shift_thread = threading.Thread(target=self.circularShift.retrieve_and_save_lines)
+        input_thread = threading.Thread(target=self.databaseInput.read_input)
+        shift_thread = threading.Thread(target=self.circularShift.retrieve_and_save_records)
         alphabetize_thread = threading.Thread(target=self.alphabetize.alphabetize)
         output_thread = threading.Thread(target=self.run_output)
 
@@ -397,25 +485,20 @@ class Master_Control:
 
         self.shiftHistory = self.circularShift.getHistory()
         self.alphabetizationHistory = self.alphabetize.getHistory()
-        #print(self.shiftHistory)
-        #print(self.alphabetizationHistory)
+        # print(self.shiftHistory)
+        # print(self.alphabetizationHistory)
 
-
-        
-
-
-
-    # Prints the output to the command line
+    # Prints the output to the command record
     def run_output(self):
         print(self.output.get_output())
 
     def get_output(self):
         outputString = ""
         listKeys = self.shiftHistory.keys()
-        lineCount = 1
+        recordCount = 1
         for key in listKeys:
             outputString += f"<div class='output-box'>\n"
-            outputString += f"<h1><strong>LINE {lineCount}:</strong> <span style=\"font-weight:normal\">{key}</span></h1>\n"
+            outputString += f"<h1><strong>record {recordCount}:</strong> <span style=\"font-weight:normal\">{key}</span></h1>\n"
             listShifts = self.shiftHistory[key]
             shiftCount = 1
             for shift in listShifts:
@@ -426,18 +509,20 @@ class Master_Control:
                     outputString += f"<li>{element}</li>\n"
                 outputString += "</ul>\n"
                 shiftCount += 1
-            lineCount += 1
+            recordCount += 1
             outputString += "</div>\n"
-        #test
-        #print(outputString)
-        
+        # test
+        # print(outputString)
+
         return outputString
-
-
-
 
     def stop_threads(self):
         self.done_event.set()
+
+
+
+
+
 
 
 
@@ -445,4 +530,3 @@ class Master_Control:
 if __name__ == '__main__':
     master = Master_Control()
     master.run()
-'''

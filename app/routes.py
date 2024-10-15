@@ -4,7 +4,8 @@ from flask import render_template, redirect, url_for, flash
 from app.forms import URLForm
 from app.db_map import URLs
 from app.db import db
-import KWIC.KWIC2
+#import KWIC.KWIC2
+import KWIC.KWIC3
 from app.web_scraper import Web_Scraper
 
 
@@ -55,7 +56,7 @@ def init_app(app):
     def circular_shift_demo():
 
         # Create an instance of Master_Control
-        master = KWIC.KWIC2.Master_Control()
+        master = KWIC.KWIC3.Master_Control(app)
 
         # Run the KWIC engine in a separate thread
         process_thread = threading.Thread(target=master.run)
