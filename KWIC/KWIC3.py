@@ -1,6 +1,7 @@
 import csv
 import queue
 
+from queue import Queue as StandardQueue
 import threading
 
 # from flask import current_app
@@ -44,6 +45,19 @@ class Alpha_Record_interface:
     @abstractmethod
     def __init__(self, text_line: str, url: str, data_id: int, url_id: int) -> None:
         pass
+
+    def get_text_line(self) -> str:
+        pass
+
+    def get_url(self) -> str:
+        pass
+
+    def get_data_id(self) -> int:
+        pass
+
+    def get_url_id(self) -> int:
+        pass
+
 
 
 
@@ -122,7 +136,7 @@ class CircularShift_Interface:
     def getHistory(self) -> dict:
         pass
 
-
+'''
 # Interface for the Alphabetize class
 class Alphabetize_Interface:
     @abstractmethod
@@ -149,11 +163,12 @@ class Alphabetize_Interface:
     def getHistory(self) -> dict:
         pass
 
+'''
 
 # Interface for the Output class
 class Output_Interface:
     @abstractmethod
-    def __init__(self, alphabetize: Alphabetize_Interface) -> None:
+    def __init__(self, cirtularShift: CircularShift_Interface) -> None:
         pass
 
 
@@ -331,7 +346,7 @@ class CircularShift(CircularShift_Interface):
     def __init__(self, recordStorage: RecordStorage_Interface) -> None:
         self.recordStorage = recordStorage
         self.records = None
-        self.shifted_records = {}
+
         self.queue = Queue()
 
 
@@ -358,7 +373,7 @@ class CircularShift(CircularShift_Interface):
                 break
 
             # Assuming `record.scraped_text` is the long string with lines separated by "\n"
-            lines = record.scraped_text.split("\n")  # Splitting the text by "\n" into individual lines
+            lines = record.scraped_text.split("$")  # Splitting the text by "\n" into individual lines
 
             # Process each line individually
             for line in lines:
@@ -375,11 +390,11 @@ class CircularShift(CircularShift_Interface):
 
                     # Add the AlphaRecord object to the shifted_records dictionary
                     # Using the shifted line as the key for uniqueness
-                    self.shifted_records[shifted_line] = alpha_record
+                    #self.shifted_records[shifted_line] = alpha_record
                     # Optionally, add to the queue if you want further processing
                     self.queue.put(alpha_record)
 
-                self.shifted_records[line] = shiftList
+                #self.shifted_records[line] = shiftList
 
 
 
@@ -404,8 +419,7 @@ class CircularShift(CircularShift_Interface):
             # Join the words array with spaces and store it in record (one whole string now)
             record = " ".join(words)
             shiftedRecords.append(record)
-            # We can add the shifted record to the queue to be alphabetized
-            self.queue.put(record)
+
 
 
         return shiftedRecords
@@ -417,8 +431,8 @@ class CircularShift(CircularShift_Interface):
 
 
     # Returns all shifted records
-    def get_shifted_Records(self) -> list:
-        return list(self.shifted_records)
+    #def get_shifted_Records(self) -> list:
+    #    return list(self.shifted_records)
 
 
 
@@ -428,8 +442,8 @@ class CircularShift(CircularShift_Interface):
 
 
 
-    def getHistory(self) -> dict:
-        return self.shifted_records
+    #def getHistory(self) -> dict:
+    #    return self.shifted_records
 
 
 
@@ -517,44 +531,43 @@ class Output(Output_Interface):
         self.circularShift = circularShift
         self.app = app
 
-
-
-    def send_output_to_database(self):
-
+    def send_output_to_database(self, batch_size=10000):
         with self.app.app_context():
-            # We continuously check with alphabetize to see if there are new records to output
+            records_batch = []
+
             while True:
-
                 try:
-                    record = self.circularShift.getQueue().get(timeout=5)
+                    record = self.circularShift.getQueue().get()
 
-                    # If the record is "None", we are free from the loop
                     if record is None:
                         break
 
                     alphabetized_data = AlphabetizedData(
-                        text_line=record.text_line,  # Replace with the appropriate attribute
+                        text_line=record.text_line,
                         url_id=record.url_id,
                         data_id=record.data_id,
-                        mfa=0  # Assuming mfa starts at 0 for each new entry
+                        mfa=0
                     )
 
+                    records_batch.append(alphabetized_data)
 
-                    db.session.add(alphabetized_data)
-
-
-
-
-
+                    # Commit in batches
+                    if len(records_batch) >= batch_size:
+                        db.session.bulk_save_objects(records_batch)
+                        db.session.commit()
+                        records_batch = []  # Clear the batch after committing
+                        print(f"Batch of {batch_size} records committed to the database.")
 
                 except queue.Empty:
-                        break
+                    break
 
-
-                # Commit all records at once to the database
+            # Commit any remaining records in the last batch
+            if records_batch:
+                db.session.bulk_save_objects(records_batch)
                 db.session.commit()
-                print("All records have been committed to the database.")
+                print(f"Final batch of {len(records_batch)} records committed to the database.")
 
+            print("All records have been committed to the database.")
 
 
 
