@@ -46,10 +46,25 @@ class Web_Scraper:
             response = requests.get(url)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
-                page_text = soup.get_text(separator='$', strip=True)
-                return page_text
+                page_text = soup.get_text(separator='\n', strip=True)
+
+                # remove tabs
+                page_text = page_text.replace('\t', ' ')
+
+                # Split text by new lines
+                lines = page_text.split('\n')
+
+                # Remove empty lines and unnecessary whitespace
+                cleaned_lines = [line.strip() for line in lines if line.strip()]
+
+                # Join the cleaned lines back with '\n' to keep it as a single string separated by new lines
+                cleaned_text = '\n'.join(cleaned_lines)
+
+                return cleaned_text
+
             else:
                 return "None"
+            
 
         except Exception as e:
             print(f"Failed to scrape {url}: {str(e)}")

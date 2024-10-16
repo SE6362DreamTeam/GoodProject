@@ -16,12 +16,15 @@ from flask import current_app
 #from run import app
 from sqlalchemy.orm import joinedload
 
+from app.db_map import AlphabetizedData
+#from app.db import db_session
+
 
 # Interface for Record
-class Record_interface:
+class Record_Interface:
 
     @abstractmethod
-    def __init__(self, scraped_text:str, url:str, data_id:int, url_id:int) -> None:
+    def __init__(self, text:str, url:str, data_id:int, url_id:int) -> None:
         pass
 
     def get_scraped_text(self) -> str:
@@ -35,6 +38,14 @@ class Record_interface:
 
     def get_url_id(self) -> int:
         pass
+
+class Alpha_Record_interface:
+
+    @abstractmethod
+    def __init__(self, text_line: str, url: str, data_id: int, url_id: int) -> None:
+        pass
+
+
 
 
 
@@ -145,13 +156,15 @@ class Output_Interface:
     def __init__(self, alphabetize: Alphabetize_Interface) -> None:
         pass
 
+
+
     @abstractmethod
-    def get_output(self):
+    def output_to_database(self):
         pass
 
 
 
-class ScrapedRecord(Record_interface):
+class ScrapedRecord(Record_Interface):
 
     def __init__(self, scraped_text: str, url: str, search_term: str, data_id: int, url_id: int) -> None:
         self.scraped_text = scraped_text
@@ -168,6 +181,28 @@ class ScrapedRecord(Record_interface):
 
     def get_data_id(self) -> int:
         return self.data_id
+
+
+class AlphaRecord:
+
+    def __init__(self, text_line: str, url: str, data_id: int, url_id: int) -> None:
+        self.text_line = text_line
+        self.url = url
+        self.data_id = data_id
+        self.url_id = url_id
+
+    def get_text_line(self) -> str:
+        return self.text_line
+
+    def get_url(self) -> str:
+        return self.url
+
+    def get_data_id(self) -> int:
+        return self.data_id
+
+    def get_url_id(self) -> int:
+        return self.url_id
+
 
 
 
@@ -299,29 +334,58 @@ class CircularShift(CircularShift_Interface):
         self.shifted_records = {}
         self.queue = Queue()
 
+
     # Retrieves the records form records storage and saves them into this object instance
     def retrieve_and_save_records(self) -> None:
+
         # Continuously check the recordStorage queue for more records
         while True:
+
             # Grab a record from the queue
             try:
+                # this is a single record
                 record = self.recordStorage.getQueue().get(timeout=5)
             except queue.Empty:
                 # Break out if no input is received within the timeout
                 break
-            # If we grab a "None", then we are done reading input
+
+            # If we grab a "None", then we this signals the end of the input
             if record is None:
                 # So we add a "None" to our own queue
                 self.queue.put(None)
                 # Then we can grab the entirety of the file records for record keeping
                 self.records = list(self.recordStorage.getAllRecords())
                 break
-            # If it is not none, we need to shift the record
-            shiftList = self.shift_current_record(record)
-            self.shifted_records[record] = shiftList
+
+            # Assuming `record.scraped_text` is the long string with lines separated by "\n"
+            lines = record.scraped_text.split("\n")  # Splitting the text by "\n" into individual lines
+
+            # Process each line individually
+            for line in lines:
+                shiftList = self.shift_current_record(line)
+
+                # For each shifted version, create an AlphaRecord object
+                for shifted_line in shiftList:
+                    alpha_record = AlphaRecord(
+                        text_line=shifted_line,
+                        url=record.get_url(),
+                        data_id=record.get_data_id(),
+                        url_id=record.url_id
+                    )
+
+                    # Add the AlphaRecord object to the shifted_records dictionary
+                    # Using the shifted line as the key for uniqueness
+                    self.shifted_records[shifted_line] = alpha_record
+                    # Optionally, add to the queue if you want further processing
+                    self.queue.put(alpha_record)
+
+                self.shifted_records[line] = shiftList
+
+
 
     # Shifts a single record
     def shift_current_record(self, current_record: str):
+
         # Split the current record by spaces
         words = current_record.split(" ")
 
@@ -330,6 +394,8 @@ class CircularShift(CircularShift_Interface):
         num_iterations = len(words)
         # Iterate until n iterations is reached (should have original record at nth iteration)
         shiftedRecords = []
+
+
         for i in range(num_iterations):
             # Remove the first word in words array
             popped_term = words.pop(0)
@@ -340,15 +406,27 @@ class CircularShift(CircularShift_Interface):
             shiftedRecords.append(record)
             # We can add the shifted record to the queue to be alphabetized
             self.queue.put(record)
+
+
         return shiftedRecords
+
+
+
+
+
+
 
     # Returns all shifted records
     def get_shifted_Records(self) -> list:
         return list(self.shifted_records)
 
+
+
     # Returns the queue
     def getQueue(self) -> Queue:
         return self.queue
+
+
 
     def getHistory(self) -> dict:
         return self.shifted_records
@@ -360,15 +438,17 @@ class CircularShift(CircularShift_Interface):
 
 
 
-
+'''
 # Class for alphabetizing the records
 class Alphabetize(Alphabetize_Interface):
+
     def __init__(self, circularShift: CircularShift_Interface) -> None:
         self.circularShift = circularShift
         self.records = []
         self.sorted_shifts = []
         self.sort_history = {}
         self.queue = Queue()
+
 
     # Alphabetizes the circular shifts
     def alphabetize(self) -> None:
@@ -377,7 +457,7 @@ class Alphabetize(Alphabetize_Interface):
         while True:
             # First we get a record
             try:
-                record = self.circularShift.getQueue().get(timeout=5)
+                record = AlphaRecord(self.circularShift.getQueue().get(timeout=5))
             except queue.Empty:
                 # Break out if no input is received within the timeout
                 break
@@ -387,31 +467,41 @@ class Alphabetize(Alphabetize_Interface):
                 self.queue.put(None)
                 break
                 # If not none, we can append it to our list of records
+
             self.records.append(record)
+
             # Then sort the list of records
-            self.sorted_shifts = sorted(self.records, key=lambda s: s.lower())
+            self.sorted_shifts = sorted(self.records, key=lambda s: record.text_line.lower())
+
             # And put the sorted list into our queue
             self.queue.put(self.sorted_shifts)
             self.sort_history[record] = self.sorted_shifts
+
+
         return self.sort_history
+
 
     # Returns the alphabetized records
     def get_alphabetized_records(self) -> list:
         return self.sorted_shifts
 
+
     # Gets a certain record out of the array
     def get_circular_shift_by_index(self, index: int) -> list:
         return self.sorted_shifts[index]
+
 
     # Returns the queue for this class
     def getQueue(self) -> Queue:
         return self.queue
 
+
+
     def getHistory(self) -> dict:
         return self.sort_history
 
 
-
+'''
 
 
 
@@ -421,22 +511,51 @@ class Alphabetize(Alphabetize_Interface):
 
 # Returns the alphabetized array
 class Output(Output_Interface):
-    def __init__(self, alphabetize: Alphabetize_Interface) -> None:
-        self.alphabetize = alphabetize
 
-    def get_output(self):
-        # We continuously check with alphabetize to see if there are new records to output
-        while True:
 
-            try:
-                record = self.alphabetize.getQueue().get(timeout=5)
-            except queue.Empty:
-                break
-            # If the record is "None", we are free from the loop
-            if record is None:
-                break
-        # Then we can return the final output
-        return self.alphabetize.get_alphabetized_records()
+    def __init__(self, circularShift: CircularShift_Interface, app) -> None:
+        self.circularShift = circularShift
+        self.app = app
+
+
+
+    def send_output_to_database(self):
+
+        with self.app.app_context():
+            # We continuously check with alphabetize to see if there are new records to output
+            while True:
+
+                try:
+                    record = self.circularShift.getQueue().get(timeout=5)
+
+                    # If the record is "None", we are free from the loop
+                    if record is None:
+                        break
+
+                    alphabetized_data = AlphabetizedData(
+                        text_line=record.text_line,  # Replace with the appropriate attribute
+                        url_id=record.url_id,
+                        data_id=record.data_id,
+                        mfa=0  # Assuming mfa starts at 0 for each new entry
+                    )
+
+
+                    db.session.add(alphabetized_data)
+
+
+
+
+
+
+                except queue.Empty:
+                        break
+
+
+                # Commit all records at once to the database
+                db.session.commit()
+                print("All records have been committed to the database.")
+
+
 
 
 
@@ -449,13 +568,14 @@ class Output(Output_Interface):
 class Master_Control:
     # Initializes all objects
     def __init__(self, app) -> None:
+
         # Initialize every object with their constructors
         self.app = app
         recordStorage = RecordStorage()
         self.databaseInput = database_input(recordStorage, app)
         self.circularShift = CircularShift(recordStorage)
-        self.alphabetize = Alphabetize(self.circularShift)
-        self.output = Output(self.alphabetize)
+        #self.alphabetize = Alphabetize(self.circularShift) #skip alphabaetize becase database will do better
+        self.output = Output(self.circularShift, app)
 
         #self.database_input = database_input(self.recordStorage)
 
@@ -464,23 +584,24 @@ class Master_Control:
 
     # Takes in input, shifts it, and alphabetizes it
     def run(self) -> None:
+
         # We make 4 threads for each module and target their while True loops
         input_thread = threading.Thread(target=self.databaseInput.read_input)
         shift_thread = threading.Thread(target=self.circularShift.retrieve_and_save_records)
-        alphabetize_thread = threading.Thread(target=self.alphabetize.alphabetize)
+        #alphabetize_thread = threading.Thread(target=self.alphabetize.alphabetize)
         output_thread = threading.Thread(target=self.run_output)
 
         # Then we start the 4 threads
         input_thread.start()
         shift_thread.start()
-        alphabetize_thread.start()
+        #alphabetize_thread.start()
         output_thread.start()
 
         # Then, we can follow along each thread as the inputs finishes
         # Note: This is still all being done concurrently, this just prevents the program from finishing before all inputs are read
         input_thread.join()
         shift_thread.join()
-        alphabetize_thread.join()
+        #alphabetize_thread.join()
         output_thread.join()
 
         self.shiftHistory = self.circularShift.getHistory()
@@ -490,7 +611,7 @@ class Master_Control:
 
     # Prints the output to the command record
     def run_output(self):
-        print(self.output.get_output())
+        self.output.send_output_to_database()
 
     def get_output(self):
         outputString = ""
