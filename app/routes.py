@@ -1,8 +1,8 @@
 import threading
 
-from flask import render_template, redirect, url_for, flash
+from flask import request, render_template, redirect, url_for, flash, jsonify
 from app.forms import URLForm
-from app.db_map import URLs
+from app.db_map import URLs, ScrapedData, AlphabetizedData
 from app.db import db
 #import KWIC.KWIC2
 import KWIC.KWIC3
@@ -96,8 +96,27 @@ def init_app(app):
 
 
 
-
-
         return render_template('scrape_web_pages.html')
 
+    @app.route('/clear_data', methods=['GET', 'POST'])
+    def clear_data():
+        if request.method == 'POST':
+            try:
+                # Delete all rows from AlphabetizedData and ScrapedData using SQLAlchemy's ORM
+                db.session.query(AlphabetizedData).delete()
+                db.session.query(ScrapedData).delete()
+
+                # Commit the transaction
+                db.session.commit()
+
+                flash("Data cleared from AlphabetizedData and ScrapedData tables.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error: {str(e)}", "danger")
+
+            # Redirect to the clear_data page to show a confirmation message
+            return redirect(url_for('clear_data'))
+
+        # Render the clear_data template if it's a GET request
+        return render_template('clear_data.html')
 

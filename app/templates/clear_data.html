@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+
+{% block title %}Clear Data{% endblock %}
+
+{% block content %}
+<div class="container output-box">
+    <h1>Clear Data</h1>
+    <p>Are you sure you want to delete all data from the AlphabetizedData and ScrapedData tables? This action cannot be undone.</p>
+    
+    <!-- Button to confirm and execute data deletion -->
+    <form action="{{ url_for('clear_data') }}" method="POST">
+        <button type="submit" class="btn btn-danger">Yes, Clear Data</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
