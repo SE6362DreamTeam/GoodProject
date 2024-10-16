@@ -1,12 +1,14 @@
 import threading
 
-from flask import request, render_template, redirect, url_for, flash, jsonify
-from app.forms import URLForm
+from flask import request, render_template, redirect, url_for, flash, jsonify, abort
+from app.forms import URLForm, SearchForm
 from app.db_map import URLs, ScrapedData, AlphabetizedData
 from app.db import db
 #import KWIC.KWIC2
 import KWIC.KWIC3
 from app.web_scraper import Web_Scraper
+from sqlalchemy import or_
+
 
 
 def init_app(app):
@@ -119,4 +121,66 @@ def init_app(app):
 
         # Render the clear_data template if it's a GET request
         return render_template('clear_data.html')
+
+    @app.route('/search', methods=['GET', 'POST'])
+    def search():
+        form = SearchForm()
+        results = {}
+
+        # Handle the form submission
+        if form.validate_on_submit():
+            keyword = form.keyword.data.strip()
+            search_type = form.search_type.data
+
+            # Check if there is a keyword to search
+            if keyword:
+                # Build the base query
+                query = db.session.query(
+                    AlphabetizedData.alpha_id,
+                    AlphabetizedData.text_line,
+                    URLs.search_term,
+                    URLs.url
+                ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
+
+                # Apply filter based on search_type
+                if search_type == 'and':
+                    query = query.filter(AlphabetizedData.text_line.ilike(f'%{keyword}%'))
+                elif search_type == 'or':
+                    keywords = keyword.split()
+                    or_filters = [AlphabetizedData.text_line.ilike(f'%{kw}%') for kw in keywords]
+                    query = query.filter(or_(*or_filters))
+                elif search_type == 'not':
+                    query = query.filter(~AlphabetizedData.text_line.ilike(f'%{keyword}%'))
+
+                # Order by mfa
+                query = query.order_by(AlphabetizedData.mfa.desc())
+
+                # Execute the query and ensure unique URLs
+                for result in query.all():
+                    url = result.url
+                    if url not in results:
+                        results[url] = result
+
+        # Return the template for both GET and POST requests
+        return render_template('search.html', form=form, results=results.values())
+
+
+
+    @app.route('/page/<int:alpha_id>')
+    def access_page(alpha_id):
+        # Query the AlphabetizedData entry
+        alpha_entry = db.session.query(AlphabetizedData).get(alpha_id)
+
+        if alpha_entry:
+            # Increment the access count (mfa) and save changes
+            alpha_entry.mfa += 1
+            db.session.commit()
+
+            # Render a template to display the content of the entry
+            return render_template('page.html', text_line=alpha_entry.text_line)
+        else:
+            # Return a 404 error if the entry is not found
+            abort(404)
+
+
 

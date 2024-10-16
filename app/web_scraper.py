@@ -61,7 +61,7 @@ class Web_Scraper:
                 return cleaned_text
 
             else:
-                print(f"Failed to fetch page, status code: {response.status_code}")
+                print(f"Failed to fetch page {url}, status code: {response.status_code}")
                 return "None"
 
 
