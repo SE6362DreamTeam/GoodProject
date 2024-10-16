@@ -281,6 +281,7 @@ class database_input(Input_Interface):
         self.recordStorage = recordStorage
         self.app = app
 
+
     def read_input(self) -> None:
         with self.app.app_context():
             # Perform a join to retrieve related data from ScrapedData and URLs
@@ -550,6 +551,18 @@ class Output(Output_Interface):
         self.circularShift = circularShift
         self.app = app
 
+        self.existing_records = set()
+
+        # Load existing records into a set during initialization
+        self.load_existing_records()
+
+    def load_existing_records(self):
+        """Load all existing records from the database to check for duplicates."""
+        with self.app.app_context():
+            existing_data = db.session.query(AlphabetizedData).all()
+            # Store as a set of tuples (text_line, url_id, data_id) for quick lookup
+            self.existing_records = {(record.text_line, record.url_id, record.data_id) for record in existing_data}
+
     def send_output_to_database(self, batch_size=10000):
         with self.app.app_context():
             records_batch = []
@@ -561,14 +574,18 @@ class Output(Output_Interface):
                     if record is None:
                         break
 
-                    alphabetized_data = AlphabetizedData(
-                        text_line=record.text_line,
-                        url_id=record.url_id,
-                        data_id=record.data_id,
-                        mfa=0
-                    )
+                    record_tuple = (record.text_line, record.url_id, record.data_id)
+                    if record_tuple not in self.existing_records:
+                        alphabetized_data = AlphabetizedData(
+                            text_line=record.text_line,
+                            url_id=record.url_id,
+                            data_id=record.data_id,
+                            mfa=0
+                        )
+                        records_batch.append(alphabetized_data) # Add to the batch
+                        self.existing_records.add(record_tuple) # Add to the set of existing records
 
-                    records_batch.append(alphabetized_data)
+
 
                     # Commit in batches
                     if len(records_batch) >= batch_size:
@@ -636,8 +653,8 @@ class Master_Control:
         #alphabetize_thread.join()
         output_thread.join()
 
-        self.shiftHistory = self.circularShift.getHistory()
-        self.alphabetizationHistory = self.alphabetize.getHistory()
+        #self.shiftHistory = self.circularShift.getHistory()
+        #self.alphabetizationHistory = self.alphabetize.getHistory()
         # print(self.shiftHistory)
         # print(self.alphabetizationHistory)
 
@@ -647,27 +664,22 @@ class Master_Control:
 
     def get_output(self):
         outputString = ""
-        listKeys = self.shiftHistory.keys()
-        recordCount = 1
-        for key in listKeys:
-            outputString += f"<div class='output-box'>\n"
-            outputString += f"<h1><strong>record {recordCount}:</strong> <span style=\"font-weight:normal\">{key}</span></h1>\n"
-            listShifts = self.shiftHistory[key]
-            shiftCount = 1
-            for shift in listShifts:
-                outputString += f"<h2><strong>SHIFT {shiftCount}:</strong> <span style=\"font-weight:normal\">{shift}</span></h2>\n"
-                alphabetization = self.alphabetizationHistory[shift]
-                outputString += "<h3><strong>NEW ALPHABETIZATION:</strong></h3>\n<ul>\n"
-                for element in alphabetization:
-                    outputString += f"<li>{element}</li>\n"
-                outputString += "</ul>\n"
-                shiftCount += 1
-            recordCount += 1
-            outputString += "</div>\n"
-        # test
-        # print(outputString)
+
+        with self.app.app_context():
+            # Query the AlphabetizedData table and order by text_line alphabetically
+            alphabetized_records = db.session.query(AlphabetizedData).order_by(AlphabetizedData.text_line).all()
+        # Format the output
+        outputString += "<div class='output-box'>\n"
+        outputString += "<h1>Alphabetized Records:</h1>\n<ul>\n"
+
+        for record in alphabetized_records:
+            outputString += f"<li><strong>URL ID:</strong> {record.url_id}, <strong>Data ID:</strong> {record.data_id}, <strong>Text Line:</strong> {record.text_line}</li>\n"
+
+        outputString += "</ul>\n</div>\n"
 
         return outputString
+
+
 
     def stop_threads(self):
         self.done_event.set()

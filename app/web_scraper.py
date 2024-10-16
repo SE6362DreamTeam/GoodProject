@@ -39,7 +39,7 @@ class Web_Scraper:
 
 
     def scrape_webpage(self, url, url_id):
-        # Check if the URL has already been scraped
+
 
         try:
             # Fetch the web page content
@@ -62,13 +62,13 @@ class Web_Scraper:
 
             else:
                 print(f"Failed to fetch page, status code: {response.status_code}")
-                return None
+                return "None"
 
 
 
         except Exception as e:
             print(f"Failed to scrape {url}: {str(e)}")
-            return None
+            return "None"
 
 
 
