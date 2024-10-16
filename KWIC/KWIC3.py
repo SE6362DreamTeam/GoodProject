@@ -3,7 +3,7 @@ import queue
 
 from queue import Queue as StandardQueue
 import threading
-
+import re
 # from flask import current_app
 from flask import Flask
 import app.web_scraper
@@ -100,6 +100,10 @@ class Input_Interface:
     def read_input(self) -> None:
         pass
 
+    @abstractmethod
+    def reduce_whitespace(self, text: str) -> str:
+        pass
+
 
     @abstractmethod
     def return_history(self) -> None:
@@ -110,6 +114,11 @@ class Input_Interface:
 class CircularShift_Interface:
     @abstractmethod
     def __init__(self, recordStorage: RecordStorage_Interface) -> None:
+        pass
+
+
+    @abstractmethod
+    def remove_duplicates(self, queue: Queue) -> Queue:
         pass
 
     @abstractmethod
@@ -282,7 +291,7 @@ class database_input(Input_Interface):
 
             for data in scraped_data:
                 # Access data from both ScrapedData and the related URLs record
-                scraped_text = data.scraped_text
+                scraped_text = self.reduce_whitespace(data.scraped_text)  # Reduce whitespace here
                 url = data.url.url  # Access the actual URL string from the URLs table
                 search_term = data.url.search_term  # Access the search term from the URLs table
                 data_id = data.data_id
@@ -303,6 +312,8 @@ class database_input(Input_Interface):
             # Optionally add a sentinel value (e.g., None) to signal the end of input
             self.recordStorage.addRecordToQueue(None)
 
+    def reduce_whitespace(self, text: str) -> str:
+        return re.sub(r'\s+', ' ', text).strip()
 
 
 
@@ -388,13 +399,11 @@ class CircularShift(CircularShift_Interface):
                         url_id=record.url_id
                     )
 
-                    # Add the AlphaRecord object to the shifted_records dictionary
-                    # Using the shifted line as the key for uniqueness
-                    #self.shifted_records[shifted_line] = alpha_record
-                    # Optionally, add to the queue if you want further processing
+                    # Add the AlphaRecord object to the queue
                     self.queue.put(alpha_record)
 
-                #self.shifted_records[line] = shiftList
+         # Clean up duplicate records
+        self.queue = self.remove_duplicates(self.queue)
 
 
 
@@ -424,15 +433,25 @@ class CircularShift(CircularShift_Interface):
 
         return shiftedRecords
 
+    # Removes duplicate records from the queue
+    def remove_duplicates(self, queue: Queue) -> Queue:
+        # Create a set to store unique records
+        unique_records = set()
 
+        # Create a new queue to store the unique records
+        new_queue = Queue()
 
+        # Iterate through the queue
+        while not queue.empty():
+            record = queue.get()
 
+            # Check if the record is unique
+            if record not in unique_records:
+                new_queue.put(record)
+                unique_records.add(record)
 
+        return new_queue
 
-
-    # Returns all shifted records
-    #def get_shifted_Records(self) -> list:
-    #    return list(self.shifted_records)
 
 
 
