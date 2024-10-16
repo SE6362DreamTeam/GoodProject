@@ -164,23 +164,38 @@ def init_app(app):
         # Return the template for both GET and POST requests
         return render_template('search.html', form=form, results=results.values())
 
-
-
     @app.route('/page/<int:alpha_id>')
     def access_page(alpha_id):
-        # Query the AlphabetizedData entry
+        # Query the AlphabetizedData entry by its id
         alpha_entry = db.session.query(AlphabetizedData).get(alpha_id)
 
         if alpha_entry:
-            # Increment the access count (mfa) and save changes
+            # Increment the mfa count
             alpha_entry.mfa += 1
-            db.session.commit()
 
-            # Render a template to display the content of the entry
-            return render_template('page.html', text_line=alpha_entry.text_line)
+            try:
+                # Commit the increment to the database
+                db.session.commit()
+                print(f"Successfully incremented MFA for alpha_id {alpha_id}, new MFA: {alpha_entry.mfa}")
+            except Exception as e:
+                db.session.rollback()  # Rollback in case of error
+                print(f"Failed to increment MFA for alpha_id {alpha_id}: {e}")
+                flash("Failed to update click count.", "danger")
+                return redirect(url_for('search'))
+
+            # Query the URL associated with this entry
+            url_entry = db.session.query(URLs).get(alpha_entry.url_id)
+            if url_entry:
+                # Redirect to the actual URL
+                return redirect(url_entry.url)
+            else:
+                flash("URL not found.", "danger")
         else:
-            # Return a 404 error if the entry is not found
-            abort(404)
+            flash("Page entry not found.", "danger")
+
+        # Redirect back to search page if entry or URL is missing
+        return redirect(url_for('search'))
+
 
 
 
