@@ -12,17 +12,23 @@
         <a href="{{ url_for('add_url_to_database') }}" class="btn btn-primary mt-3">Add a URL</a>
     </div>
     <div>
-        <a href="{{ url_for('circular_shift_demo')}}" class="btn btn-primary mt-3">Circular Shift Demo</a>
-    </div>
-    <div>
             <a href="{{ url_for('scrape_web_pages')}}" class="btn btn-primary mt-3">Scrape Web Pages</a>
     </div>
     <div>
-        <a href="{{ url_for('search') }}" class="btn btn-danger mt-3">Search</a>
-    </div>
-    <div>
-        <a href="{{ url_for('clear_data') }}" class="btn btn-danger mt-3">Clear Data</a>
+        <a href="{{ url_for('circular_shift_demo')}}" class="btn btn-primary mt-3">Circular Shift Demo</a>
     </div>
 
 </div>
+    <div class="container output-box">
+    <div>
+        <a href="{{ url_for('clear_data') }}" class="btn btn-danger mt-3">Clear Data</a>
+    </div>
+    </div>
+
+    <div class="container output-box">
+    <div>
+        <a href="{{ url_for('search') }}" class="btn btn-danger mt-3">Search</a>
+    </div>
+    </div>
+
 {% endblock %}

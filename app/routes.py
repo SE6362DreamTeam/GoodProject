@@ -68,11 +68,8 @@ def init_app(app):
         #master.done_event.wait()
 
 
-
-        
-
-        master.stop_threads()
         process_thread.join()
+        master.stop_threads()
 
         # Run the KWIC engine to get the output
         output_data = master.get_output()
