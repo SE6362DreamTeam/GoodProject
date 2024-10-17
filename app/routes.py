@@ -7,8 +7,7 @@ from app.db import db
 #import KWIC.KWIC2
 import KWIC.KWIC3
 from app.web_scraper import Web_Scraper
-from sqlalchemy import or_
-
+from sqlalchemy import or_, not_
 
 
 def init_app(app):
@@ -147,7 +146,9 @@ def init_app(app):
                     or_filters = [AlphabetizedData.text_line.ilike(f'%{kw}%') for kw in keywords]
                     query = query.filter(or_(*or_filters))
                 elif search_type == 'not':
-                    query = query.filter(~AlphabetizedData.text_line.ilike(f'%{keyword}%'))
+                    keywords = keyword.split()
+                    not_filters = [AlphabetizedData.text_line.ilike(f'%{kw}%') for kw in keywords]
+                    query = query.filter(not_(or_(*not_filters)))  # Use OR within NOT to exclude any match
 
                 # Order by mfa
                 query = query.order_by(AlphabetizedData.mfa.desc())
@@ -161,6 +162,9 @@ def init_app(app):
         # Return the template for both GET and POST requests
         return render_template('search.html', form=form, results=results.values())
 
+
+
+    #this route is used to access the page and increment the mfa count
     @app.route('/page/<int:alpha_id>')
     def access_page(alpha_id):
         # Query the AlphabetizedData entry by its id
