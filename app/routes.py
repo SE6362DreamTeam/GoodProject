@@ -7,7 +7,7 @@ from app.db import db
 #import KWIC.KWIC2
 import KWIC.KWIC3
 from app.web_scraper import Web_Scraper
-from sqlalchemy import or_, not_
+from sqlalchemy import or_, not_, and_
 
 
 def init_app(app):
@@ -118,19 +118,22 @@ def init_app(app):
         # Render the clear_data template if it's a GET request
         return render_template('clear_data.html')
 
+
+
+
+
+
+
     @app.route('/search', methods=['GET', 'POST'])
     def search():
         form = SearchForm()
         results = {}
 
-        # Handle the form submission
         if form.validate_on_submit():
             keyword = form.keyword.data.strip()
             search_type = form.search_type.data
 
-            # Check if there is a keyword to search
             if keyword:
-                # Build the base query
                 query = db.session.query(
                     AlphabetizedData.alpha_id,
                     AlphabetizedData.text_line,
@@ -138,17 +141,34 @@ def init_app(app):
                     URLs.url
                 ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
 
-                # Apply filter based on search_type
+                keywords = keyword.split()
                 if search_type == 'and':
-                    query = query.filter(AlphabetizedData.text_line.ilike(f'%{keyword}%'))
+                    # AND search: Each keyword should appear in either field
+                    and_filters = [
+                        or_(
+                            AlphabetizedData.text_line.ilike(f'%{kw}%'),
+                            URLs.search_term.ilike(f'%{kw}%')
+                        ) for kw in keywords
+                    ]
+                    query = query.filter(and_(*and_filters))
                 elif search_type == 'or':
-                    keywords = keyword.split()
-                    or_filters = [AlphabetizedData.text_line.ilike(f'%{kw}%') for kw in keywords]
+                    # OR search: Any keyword can be in any field
+                    or_filters = [
+                        or_(
+                            AlphabetizedData.text_line.ilike(f'%{kw}%'),
+                            URLs.search_term.ilike(f'%{kw}%')
+                        ) for kw in keywords
+                    ]
                     query = query.filter(or_(*or_filters))
                 elif search_type == 'not':
-                    keywords = keyword.split()
-                    not_filters = [AlphabetizedData.text_line.ilike(f'%{kw}%') for kw in keywords]
-                    query = query.filter(not_(or_(*not_filters)))  # Use OR within NOT to exclude any match
+                    # NOT search: None of the keywords should be in either field
+                    not_filters = [
+                        or_(
+                            AlphabetizedData.text_line.ilike(f'%{kw}%'),
+                            URLs.search_term.ilike(f'%{kw}%')
+                        ) for kw in keywords
+                    ]
+                    query = query.filter(not_(or_(*not_filters)))
 
                 # Order by mfa
                 query = query.order_by(AlphabetizedData.mfa.desc())
@@ -159,9 +179,7 @@ def init_app(app):
                     if url not in results:
                         results[url] = result
 
-        # Return the template for both GET and POST requests
         return render_template('search.html', form=form, results=results.values())
-
 
 
     #this route is used to access the page and increment the mfa count
