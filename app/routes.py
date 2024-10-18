@@ -67,11 +67,18 @@ def init_app(app):
         #master.done_event.wait()
 
 
+
         process_thread.join()
+
         master.stop_threads()
+
 
         # Run the KWIC engine to get the output
         output_data = master.get_output()
+
+
+
+
 
         # Render the output in an HTML template
         return render_template('output.html', output_data=output_data)

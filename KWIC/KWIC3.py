@@ -355,26 +355,29 @@ class RecordStorage(RecordStorage_Interface):
 
 # Class for circularly shifting records
 class CircularShift(CircularShift_Interface):
-    def __init__(self, recordStorage: RecordStorage_Interface) -> None:
+    def __init__(self, recordStorage: RecordStorage_Interface, done_event: threading.Event) -> None:
         self.recordStorage = recordStorage
         self.records = None
 
         self.queue = Queue()
+        self.done_event = done_event
 
 
     # Retrieves the records form records storage and saves them into this object instance
     def retrieve_and_save_records(self) -> None:
 
         # Continuously check the recordStorage queue for more records
-        while True:
+        while not self.done_event.is_set():
 
             # Grab a record from the queue
             try:
                 # this is a single record
-                record = self.recordStorage.getQueue().get(timeout=5)
+                record = self.recordStorage.getQueue().get(timeout=1)
             except queue.Empty:
                 # Break out if no input is received within the timeout
-                break
+                if self.done_event.is_set():
+                    break
+                continue
 
             # If we grab a "None", then we this signals the end of the input
             if record is None:
@@ -563,39 +566,46 @@ class Output(Output_Interface):
             # Store as a set of tuples (text_line, url_id, data_id) for quick lookup
             self.existing_records = {(record.text_line, record.url_id, record.data_id) for record in existing_data}
 
-    def send_output_to_database(self, batch_size=10000):
+    def send_output_to_database(self, done_event: threading.Event):
         with self.app.app_context():
             records_batch = []
+            batch_size=10000
 
-            while True:
+            while not done_event.is_set():
                 try:
-                    record = self.circularShift.getQueue().get()
-
-                    if record is None:
-                        break
-
-                    record_tuple = (record.text_line, record.url_id, record.data_id)
-                    if record_tuple not in self.existing_records:
-                        alphabetized_data = AlphabetizedData(
-                            text_line=record.text_line,
-                            url_id=record.url_id,
-                            data_id=record.data_id,
-                            mfa=0
-                        )
-                        records_batch.append(alphabetized_data) # Add to the batch
-                        self.existing_records.add(record_tuple) # Add to the set of existing records
-
-
-
-                    # Commit in batches
-                    if len(records_batch) >= batch_size:
-                        db.session.bulk_save_objects(records_batch)
-                        db.session.commit()
-                        records_batch = []  # Clear the batch after committing
-                        print(f"Batch of {batch_size} records committed to the database.")
+                    record = self.circularShift.getQueue().get(timeout=1)
 
                 except queue.Empty:
+                    if done_event.is_set():
+                        break
+
+                    continue
+
+
+                if record is None:
                     break
+
+                record_tuple = (record.text_line, record.url_id, record.data_id)
+                if record_tuple not in self.existing_records:
+                    alphabetized_data = AlphabetizedData(
+                        text_line=record.text_line,
+                        url_id=record.url_id,
+                        data_id=record.data_id,
+                        mfa=0
+                    )
+                    records_batch.append(alphabetized_data) # Add to the batch
+                    self.existing_records.add(record_tuple) # Add to the set of existing records
+
+
+
+                # Commit in batches
+                if len(records_batch) >= batch_size:
+                    db.session.bulk_save_objects(records_batch)
+                    db.session.commit()
+                    records_batch = []  # Clear the batch after committing
+                    print(f"Batch of {batch_size} records committed to the database.")
+
+
 
             # Commit any remaining records in the last batch
             if records_batch:
@@ -618,18 +628,20 @@ class Master_Control:
     # Initializes all objects
     def __init__(self, app) -> None:
 
+        # Ends threads
+        self.done_event = threading.Event()
+
         # Initialize every object with their constructors
         self.app = app
         recordStorage = RecordStorage()
         self.databaseInput = database_input(recordStorage, app)
-        self.circularShift = CircularShift(recordStorage)
+        self.circularShift = CircularShift(recordStorage, self.done_event)
         #self.alphabetize = Alphabetize(self.circularShift) #skip alphabaetize becase database will do better
         self.output = Output(self.circularShift, app)
 
         #self.database_input = database_input(self.recordStorage)
 
-        # Ends threads
-        self.done_event = threading.Event()
+
 
     # Takes in input, shifts it, and alphabetizes it
     def run(self) -> None:
@@ -660,7 +672,7 @@ class Master_Control:
 
     # Prints the output to the command record
     def run_output(self):
-        self.output.send_output_to_database()
+        self.output.send_output_to_database(self.done_event)
 
     def get_output(self):
         outputString = ""
@@ -682,7 +694,9 @@ class Master_Control:
 
 
     def stop_threads(self):
+
         self.done_event.set()
+        print("Stopping all threads...")
 
 
 
