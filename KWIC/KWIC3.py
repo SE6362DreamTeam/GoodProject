@@ -685,7 +685,9 @@ class Master_Control:
         outputString += "<h1>Alphabetized Records:</h1>\n<ul>\n"
 
         for record in alphabetized_records:
-            outputString += f"<li><strong>URL ID:</strong> {record.url_id}, <strong>Data ID:</strong> {record.data_id}, <strong>Text Line:</strong> {record.text_line}</li>\n"
+            outputString += f"<li><strong>Alpha ID:</strong> {record.alpha_id}, <strong>Url ID:</strong> {record.url_id}, <strong>Data ID:</strong> {record.data_id}</li>"
+            outputString += f"<div><strong>Text Line:</strong> {record.text_line}\n</div>"
+            outputString += f"<div>------------------------------------------------------</div>\n"
 
         outputString += "</ul>\n</div>\n"
 
