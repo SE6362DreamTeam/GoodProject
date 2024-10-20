@@ -152,46 +152,55 @@ def init_app(app):
                 keywords = keyword.split()
 
                 if search_type == 'and':
-                    # AND search: Each keyword should appear in either field
                     and_filters = [
                         or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Keyword between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),    # Keyword at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),    # Keyword at the end
+                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
+                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
+                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
+                            AlphabetizedData.text_line == kw,  # Exact match
                             URLs.search_term.ilike(f'% {kw} %'),
                             URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}')
+                            URLs.search_term.ilike(f'% {kw}'),
+                            URLs.search_term == kw
                         ) for kw in keywords
                     ]
                     query = query.filter(and_(*and_filters))
 
+
                 elif search_type == 'or':
-                    # OR search: Any keyword can be in any field
                     or_filters = [
                         or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Keyword between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),    # Keyword at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),    # Keyword at the end
+                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
+                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
+                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
+                            AlphabetizedData.text_line == kw,  # Exact match
                             URLs.search_term.ilike(f'% {kw} %'),
                             URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}')
+                            URLs.search_term.ilike(f'% {kw}'),
+                            URLs.search_term == kw
                         ) for kw in keywords
                     ]
                     query = query.filter(or_(*or_filters))
 
+
+
                 elif search_type == 'not':
-                    # NOT search: None of the keywords should be in either field
                     not_filters = [
                         or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Keyword between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),    # Keyword at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),    # Keyword at the end
+                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
+                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
+                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
+                            AlphabetizedData.text_line == kw,  # Exact match
                             URLs.search_term.ilike(f'% {kw} %'),
                             URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}')
+                            URLs.search_term.ilike(f'% {kw}'),
+                            URLs.search_term == kw
                         ) for kw in keywords
+
                     ]
+
                     query = query.filter(not_(or_(*not_filters)))
+
 
                 # Order by mfa
                 query = query.order_by(AlphabetizedData.mfa.desc())
