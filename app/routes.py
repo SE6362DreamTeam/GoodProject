@@ -8,7 +8,8 @@ from app.db import db
 import KWIC.KWIC3
 from app.web_scraper import Web_Scraper
 from sqlalchemy import or_, not_, and_
-
+import validators
+import requests
 
 def init_app(app):
     """Function to initialize routes"""
@@ -26,7 +27,21 @@ def init_app(app):
             search_term = form.search_term.data
             url = form.url.data
 
-            # Create a new instance of the URLs model
+            # Validate the URL
+            if not validators.url(url):
+                flash('Invalid URL. Please enter a valid URL.', 'danger')
+                return redirect(url_for('add_url_to_database'))
+            # Ping the URL to check if it's reachable
+            try:
+                # Set timeout to 5 seconds
+                response = requests.get(url, timeout=5) 
+                if response.status_code != 200:
+                    flash('The URL is not reachable. Please enter a working URL.', 'danger')
+                    return redirect(url_for('add_url_to_database'))
+            except requests.RequestException:
+                flash('The URL is not reachable. Please enter a working URL.', 'danger')
+                return redirect(url_for('add_url_to_database'))
+                # Create a new instance of the URLs model
             new_url = URLs(search_term=search_term, url=url)
 
             try:

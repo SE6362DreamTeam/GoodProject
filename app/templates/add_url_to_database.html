@@ -36,6 +36,18 @@
     </form>
 </div>
 <div class='container output-box'>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<div class='container output-box'>
     <h2>Stored URLs</h2>
     <table border="1" class="table mt-3">
         <thead>
