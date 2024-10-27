@@ -5,7 +5,7 @@ import app.db
 from sqlalchemy.orm import sessionmaker
 from app.db import db
 from flask import current_app
-
+import re
 
 
 
@@ -14,6 +14,16 @@ class Web_Scraper:
 
     def __init__(self):
         # Initialization code if needed
+        self.noise_words = {"the", "is", "in", "at", "of", "and", "a", "to", "on", "with", "as", "for", "it", "was",
+                             "by", "be", "has", "had", "that", "which", "so", "but", "or", "if", "not", "are", "were",
+                               "we", "he", "she", "they", "them", "their", "our", "his", "her", "who", "will", "can",
+                                 "could", "would", "about", "above", "after", "again", "against", "all", "am", "an",
+                                   "any", "because", "been", "before", "being", "below", "between", "both", "during",
+                                     "each", "how", "its", "itself", "just", "like", "more", "most", "now", "other",
+                                       "over", "same", "some", "such", "than", "then", "there", "these", "this", "those",
+                                         "through", "up", "very", "what", "when", "where", "why", "your"}
+
+
         pass
 
 
@@ -55,6 +65,12 @@ class Web_Scraper:
                 lines = page_text.split('$')
                 cleaned_lines = [line.strip() for line in lines if line.strip()]
 
+                #Remove noise words
+                cleaned_lines = [self.remove_noise_words(line) for line in cleaned_lines]
+
+                # Remove lines without any letters
+                cleaned_lines = self.remove_empty_lines(cleaned_lines)
+
                 # Join cleaned lines back with a single newline separator
                 cleaned_text = '$'.join(cleaned_lines)
 
@@ -70,9 +86,13 @@ class Web_Scraper:
             print(f"Failed to scrape {url}: {str(e)}")
             return "None"
 
+    def remove_noise_words(self, text):
+        words = text.split()
+        filtered_words = [word for word in words if word.lower() not in self.noise_words]
+        return ' '.join(filtered_words)
 
-
-
+    def remove_empty_lines(self, lines):
+        return [line for line in lines if re.search(r'[a-zA-Z]', line)]
 
     def send_scraped_text_to_database(self):
         try:
