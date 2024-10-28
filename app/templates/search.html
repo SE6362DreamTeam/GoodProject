@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-
 {% block content %}
 <div class="container output-box">
     <h2>Search Results</h2>
@@ -7,9 +6,11 @@
         {{ form.hidden_tag() }}
         {{ form.keyword.label }} {{ form.keyword() }}
         {{ form.search_type.label }} {{ form.search_type() }}
-        <button type="submit">Search</button>
+        {{ form.case_sensitive.label }} {{ form.case_sensitive() }}
+        <div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
     </form>
-
     <ul>
         {% for result in results %}
             <div style="margin-bottom: 15px;">

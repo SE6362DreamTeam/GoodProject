@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, URLField, SubmitField, RadioField
+from wtforms import StringField, URLField, SubmitField, RadioField, BooleanField
 from wtforms.validators import DataRequired, URL
 
 class URLForm(FlaskForm):
@@ -10,4 +10,5 @@ class URLForm(FlaskForm):
 class SearchForm(FlaskForm):
     keyword = StringField('Enter keyword', validators=[DataRequired()])
     search_type = RadioField('Search Type', choices=[('and', 'AND'), ('or', 'OR'), ('not', 'NOT')], validators=[DataRequired()])
+    case_sensitive = BooleanField('Case Sensitive')
     submit = SubmitField('Search')

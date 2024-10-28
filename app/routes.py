@@ -142,7 +142,7 @@ def init_app(app):
 
 
 
-
+    
 
 
 
@@ -151,11 +151,10 @@ def init_app(app):
     def search():
         form = SearchForm()
         results = {}
-
         if form.validate_on_submit():
             keyword = form.keyword.data.strip()
             search_type = form.search_type.data
-
+            case_sensitive = form.case_sensitive.data
             if keyword:
                 query = db.session.query(
                     AlphabetizedData.alpha_id,
@@ -163,70 +162,53 @@ def init_app(app):
                     URLs.search_term,
                     URLs.url
                 ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
-
+                
                 keywords = keyword.split()
-
+                
+                def make_filter(kw):
+                    if case_sensitive:
+                        return or_(
+                            AlphabetizedData.text_line.like(f'% {kw} %'),  # Word between spaces
+                            AlphabetizedData.text_line.like(f'{kw} %'),  # Word at the start
+                            AlphabetizedData.text_line.like(f'% {kw}'),  # Word at the end
+                            AlphabetizedData.text_line == kw,  # Exact match
+                            URLs.search_term.like(f'% {kw} %'),
+                            URLs.search_term.like(f'{kw} %'),
+                            URLs.search_term.like(f'% {kw}'),
+                            URLs.search_term == kw
+                        )
+                    else:
+                        return or_(
+                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
+                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
+                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
+                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
+                            URLs.search_term.ilike(f'% {kw} %'),
+                            URLs.search_term.ilike(f'{kw} %'),
+                            URLs.search_term.ilike(f'% {kw}')
+                        )
+                
                 if search_type == 'and':
-                    and_filters = [
-                        or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
-                            AlphabetizedData.text_line == kw,  # Exact match
-                            URLs.search_term.ilike(f'% {kw} %'),
-                            URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}'),
-                            URLs.search_term == kw
-                        ) for kw in keywords
-                    ]
+                    and_filters = [make_filter(kw) for kw in keywords]
                     query = query.filter(and_(*and_filters))
-
-
                 elif search_type == 'or':
-                    or_filters = [
-                        or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
-                            AlphabetizedData.text_line == kw,  # Exact match
-                            URLs.search_term.ilike(f'% {kw} %'),
-                            URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}'),
-                            URLs.search_term == kw
-                        ) for kw in keywords
-                    ]
+                    or_filters = [make_filter(kw) for kw in keywords]
                     query = query.filter(or_(*or_filters))
-
-
-
                 elif search_type == 'not':
-                    not_filters = [
-                        or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
-                            AlphabetizedData.text_line == kw,  # Exact match
-                            URLs.search_term.ilike(f'% {kw} %'),
-                            URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}'),
-                            URLs.search_term == kw
-                        ) for kw in keywords
-
-                    ]
-
+                    not_filters = [make_filter(kw) for kw in keywords]
                     query = query.filter(not_(or_(*not_filters)))
-
-
+                
                 # Order by mfa
                 query = query.order_by(AlphabetizedData.mfa.desc())
-
                 # Execute the query and ensure unique URLs
                 for result in query.all():
                     url = result.url
                     if url not in results:
                         results[url] = result
-
+        
         return render_template('search.html', form=form, results=results.values())
+
+
 
 
     #this route is used to access the page and increment the mfa count
