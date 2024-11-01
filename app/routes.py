@@ -151,6 +151,7 @@ def init_app(app):
     def search():
         form = SearchForm()
         results = {}
+        message = None
         if form.validate_on_submit():
             keyword = form.keyword.data.strip()
             search_type = form.search_type.data
@@ -205,8 +206,15 @@ def init_app(app):
                     url = result.url
                     if url not in results:
                         results[url] = result
-        
-        return render_template('search.html', form=form, results=results.values())
+
+            # Check if results are empty
+            if results:
+                message = None  # Set to None or empty if results are found
+            else:
+                message = "No results found for your search."
+
+        return render_template('search.html', form=form, results=results.values(), message=message)
+        # return render_template('search.html', form=form, results=results.values())
 
 
 
@@ -244,6 +252,8 @@ def init_app(app):
         # Redirect back to search page if entry or URL is missing
         return redirect(url_for('search'))
 
-
+    @app.route('/view_user_manual', methods=['GET'])
+    def view_user_manual():
+        return render_template('view_user_manual.html')
 
 

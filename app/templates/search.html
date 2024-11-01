@@ -1,16 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="container output-box">
-    <h2>Search Results</h2>
+    <h2>Perform a Search</h2>
     <form method="post">
         {{ form.hidden_tag() }}
         {{ form.keyword.label }} {{ form.keyword() }}
+        <p><br></p>
+        <div>
         {{ form.search_type.label }} {{ form.search_type() }}
+        </div>
         {{ form.case_sensitive.label }} {{ form.case_sensitive() }}
+        <p><br></p>
         <div>
             <button type="submit" class="btn btn-primary">Search</button>
         </div>
     </form>
+
+    {% if message %}
+    <div><p>{{ message }}</p></div>
+    {% endif %}
+    
     <ul>
         {% for result in results %}
             <div style="margin-bottom: 15px;">
