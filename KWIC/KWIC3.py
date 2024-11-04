@@ -548,13 +548,12 @@ class Alphabetize(Alphabetize_Interface):
 
 # Returns the alphabetized array
 class Output(Output_Interface):
-
-
     def __init__(self, circularShift: CircularShift_Interface, app) -> None:
         self.circularShift = circularShift
         self.app = app
 
         self.existing_records = set()
+        self.records_inserted = 0  # Initialize the number of records inserted
 
         # Load existing records into a set during initialization
         self.load_existing_records()
@@ -569,18 +568,18 @@ class Output(Output_Interface):
     def send_output_to_database(self, done_event: threading.Event):
         with self.app.app_context():
             records_batch = []
-            batch_size=10000
+            batch_size = 2000
+            batch_num = 0
 
-            while not done_event.is_set():
+            while not done_event.is_set() or self.circularShift.getQueue().qsize() > 0:
                 try:
-                    record = self.circularShift.getQueue().get(timeout=1)
+                    record = self.circularShift.getQueue().get(timeout=.5)
 
                 except queue.Empty:
                     if done_event.is_set():
                         break
 
                     continue
-
 
                 if record is None:
                     break
@@ -593,29 +592,26 @@ class Output(Output_Interface):
                         data_id=record.data_id,
                         mfa=0
                     )
-                    records_batch.append(alphabetized_data) # Add to the batch
-                    self.existing_records.add(record_tuple) # Add to the set of existing records
-
-
+                    records_batch.append(alphabetized_data)  # Add to the batch
+                    self.existing_records.add(record_tuple)  # Add to the set of existing records
 
                 # Commit in batches
                 if len(records_batch) >= batch_size:
+                    batch_num += 1
                     db.session.bulk_save_objects(records_batch)
-                    db.session.commit()
+                    db.session.flush()
+                    self.records_inserted += len(records_batch)  # Update inserted records counter
                     records_batch = []  # Clear the batch after committing
-                    print(f"Batch of {batch_size} records committed to the database.")
-
-
+                    print(f"Batch {batch_num} of {batch_size} records committed to the database.")
 
             # Commit any remaining records in the last batch
             if records_batch:
                 db.session.bulk_save_objects(records_batch)
                 db.session.commit()
+                self.records_inserted += len(records_batch)  # Update inserted records counter
                 print(f"Final batch of {len(records_batch)} records committed to the database.")
 
             print("All records have been committed to the database.")
-
-
 
 
 
@@ -677,19 +673,19 @@ class Master_Control:
     def get_output(self):
         outputString = ""
 
+        # Get the total records sent to the database during the current run
+        records_inserted = self.output.records_inserted  # Access records_inserted from the Output instance
+
         with self.app.app_context():
-            # Query the AlphabetizedData table and order by text_line alphabetically
-            alphabetized_records = db.session.query(AlphabetizedData).order_by(AlphabetizedData.text_line).all()
+            # Query to get the total number of records in the AlphabetizedData table
+            total_records_in_db = db.session.query(AlphabetizedData).count()
+
         # Format the output
         outputString += "<div class='output-box'>\n"
-        outputString += "<h1>Alphabetized Records:</h1>\n<ul>\n"
-
-        for record in alphabetized_records:
-            outputString += f"<li><strong>Alpha ID:</strong> {record.alpha_id}, <strong>Url ID:</strong> {record.url_id}, <strong>Data ID:</strong> {record.data_id}</li>"
-            outputString += f"<div><strong>Text Line:</strong> {record.text_line}\n</div>"
-            outputString += f"<div>------------------------------------------------------</div>\n"
-
-        outputString += "</ul>\n</div>\n"
+        outputString += "<h1>Database Record Summary:</h1>\n"
+        outputString += f"<p><strong>Total records inserted in this run:</strong> {records_inserted}</p>\n"
+        outputString += f"<p><strong>Total records in the database:</strong> {total_records_in_db}</p>\n"
+        outputString += "</div>\n"
 
         return outputString
 

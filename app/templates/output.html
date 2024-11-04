@@ -1,13 +1,13 @@
 {% extends 'layout.html' %}
 
-{% block title %}KWIC Output{% endblock %}
+{% block title %}KWIC Circular Shift Demo{% endblock %}
 
 {% block content %}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 <div class="container">
-    <h1>KWIC Engine Output</h1>
+    <h1>KWIC Engine Circular Shift Output</h1>
     <div>
-        {{ output_data|safe }}
+        {{ output_data|safe }}  <!-- This will display the database record summary -->
     </div>
 </div>
 {% endblock %}
