@@ -4,38 +4,58 @@
 
 {% block content %}
 <div class='container output-box'>
-        <h1>Web Application Instructions</h1>
+    <h1>Web Application Instructions</h1>
 
+    <div class="section">
         <h2>Add a URL to the Database</h2>
         <p>1. Click on <strong>Add URL</strong> on the Home page.</p>
         <p>2. Enter a term that you would like to enter into the database.</p>
         <p>3. Enter the corresponding URL into the database.</p>
         <p>4. Click the <strong>Submit</strong> button.</p>
         <p>If your URL was accepted, it will appear as an appended entry in the database contents.</p>
-        <p><br></p>
+        <div class="image">
+            <img src="{{ url_for('static', filename='images/add_URL.png') }}" alt="Add URL to the Database">
+        </div>
+    </div>
 
+    <div class="section">
         <h2>Scrape Web Pages</h2>
         <p>1. Click on <strong>Scrape Web Pages</strong> on the Home page.</p>
         <p>2. Wait for the application to scrape contents from all URLs in the database.</p>
         <p>If the operation was successful, a <strong>“Web Pages Scraped Successfully”</strong> message will appear.</p>
-        <p><br></p>
+        <div class="image">
+            <img src="{{ url_for('static', filename='images/web_scraping.png') }}" alt="Scrape Web Pages">
+        </div>
+    </div>
 
+    <div class="section">
         <h2>Search</h2>
         <p>1. Click on <strong>Search</strong> on the Home page.</p>
         <p>2. Enter your search term.</p>
         <p>3. Select your search type: <strong>AND</strong>, <strong>OR</strong>, <strong>NOT</strong>.</p>
         <p>4. Check the box if you would like a case sensitive search performed.</p>
         <p>5. Click the <strong>Submit</strong> button.</p>
-        <p><br></p>
+        <div class="image">
+            <img src="{{ url_for('static', filename='images/search.jpg') }}" alt="Search">
+        </div>
+    </div>
 
+    <div class="section">
         <h2>Perform KWIC Operations</h2>
         <p>1. Click on <strong>Scrape Web Pages</strong> on the Home page.</p>
         <p>2. Wait for the application to scrape contents from all URLs in the database.</p>
-        <p>If the operation was successful, a <strong>“Web Pages Scraped Successfully”</strong> message will appear.</p>
+        <p>If the operation was successful, a <strong>“Web Pages Scraped Successfully” message will appear.</p>
         <p>3. Return to the Home page by clicking <strong>Home</strong> in the top left corner.</p>
         <p>4. Click on <strong>Circular Shift Demo</strong> on the Home page.</p>
-        <p>5. Wait for the application to perform KWIC operations on the descriptions of all URLs in the database.</p>
-        <p>All alphabetized, circular shifted lines of the descriptions of all URLs in the database should appear.</p>
+        <p>5. Use the controls to pick how many results to show at a time:</p>
+        <ul>
+            <li>Select the number of records to display per page using the dropdown menu.</li>
+            <li>Click the <strong>Previous</strong> or <strong>Next</strong> button to navigate through the pages of results.</li>
+        </ul>
+        <p>6. All alphabetized, circular shifted lines of the descriptions of all URLs in the database should appear incrementally based on the selected settings.</p>
+        <div class="image">
+            <img src="{{ url_for('static', filename='images/your_image_file.jpg') }}" alt="Perform KWIC Operations">
+        </div>
+    </div>
 </div>
-
 {% endblock %}
