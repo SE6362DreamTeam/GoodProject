@@ -477,9 +477,9 @@ class Output(Output_Interface):
         self.app = app
 
         self.existing_records = set()
-        self.records_inserted = 0  # Initialize the number of records inserted
+        self.num_records_inserted = 0  # Initialize the number of records inserted
 
-        # Load existing records into a set during initialization
+        self.new_records_queue = queue.Queue()  # Initialize a new queue for storing records
         self.load_existing_records()
 
     def load_existing_records(self):
@@ -498,15 +498,16 @@ class Output(Output_Interface):
             while not done_event.is_set() or self.circularShift.getQueue().qsize() > 0:
                 try:
                     record = self.circularShift.getQueue().get(timeout=.5)
-
                 except queue.Empty:
                     if done_event.is_set():
                         break
-
                     continue
 
                 if record is None:
                     break
+
+                # Add the record to the new queue
+                self.new_records_queue.put(record)
 
                 record_tuple = (record.text_line, record.url_id, record.data_id)
                 if record_tuple not in self.existing_records:
@@ -524,7 +525,7 @@ class Output(Output_Interface):
                     batch_num += 1
                     db.session.bulk_save_objects(records_batch)
                     db.session.flush()
-                    self.records_inserted += len(records_batch)  # Update inserted records counter
+                    self.num_records_inserted += len(records_batch)  # Update inserted records counter
                     records_batch = []  # Clear the batch after committing
                     print(f"Batch {batch_num} of {batch_size} records committed to the database.")
 
@@ -532,11 +533,17 @@ class Output(Output_Interface):
             if records_batch:
                 db.session.bulk_save_objects(records_batch)
                 db.session.commit()
-                self.records_inserted += len(records_batch)  # Update inserted records counter
+                self.num_records_inserted += len(records_batch)  # Update inserted records counter
                 print(f"Final batch of {len(records_batch)} records committed to the database.")
+
+            # Add None to the queue to signal the end of processing
+            self.new_records_queue.put(None)
 
             print("All records have been committed to the database.")
 
+    def get_new_records_queue(self):
+        """Method to access the new records queue."""
+        return self.new_records_queue
 
 
 
@@ -558,7 +565,7 @@ class Master_Control:
         self.circularShift = CircularShift(recordStorage, self.done_event)
         #self.alphabetize = Alphabetize(self.circularShift) #skip alphabaetize becase database will do better
         self.output = Output(self.circularShift, app)
-
+        self.outputQueue = queue.Queue()
         #self.database_input = database_input(self.recordStorage)
 
 
@@ -584,7 +591,7 @@ class Master_Control:
         shift_thread.join()
         #alphabetize_thread.join()
         output_thread.join()
-
+        self.get_output_from_database()
         #self.shiftHistory = self.circularShift.getHistory()
         #self.alphabetizationHistory = self.alphabetize.getHistory()
         # print(self.shiftHistory)
@@ -595,25 +602,41 @@ class Master_Control:
         self.output.send_output_to_database(self.done_event)
 
     def get_output(self):
+        
         outputString = ""
 
         # Get the total records sent to the database during the current run
-        records_inserted = self.output.records_inserted  # Access records_inserted from the Output instance
-
+        num_records_inserted = self.output.num_records_inserted  # Access records_inserted from the Output instance
+        print("Retrieving from the database")
         with self.app.app_context():
             # Query to get the total number of records in the AlphabetizedData table
             total_records_in_db = db.session.query(AlphabetizedData).count()
-
+        print("Done retrieving")
         # Format the output
         outputString += "<div class='output-box'>\n"
         outputString += "<h1>Database Record Summary:</h1>\n"
-        outputString += f"<p><strong>Total records inserted in this run:</strong> {records_inserted}</p>\n"
+        outputString += f"<p><strong>Total records inserted in this run:</strong> {num_records_inserted}</p>\n"
         outputString += f"<p><strong>Total records in the database:</strong> {total_records_in_db}</p>\n"
         outputString += "</div>\n"
 
         return outputString
 
+    def get_output_from_database(self):
+        batch_size = 200
+        offset = 0
 
+        with self.app.app_context():  # Ensure the function runs within the app context
+            while True:
+                batch_records = db.session.query(AlphabetizedData).order_by(AlphabetizedData.text_line).offset(offset).limit(batch_size).all()
+                if not batch_records:
+                    break
+                for record in batch_records:
+                    self.outputQueue.put(record)
+                offset += batch_size
+            self.outputQueue.put(None)
+
+    def get_outputQueue(self):
+        return self.outputQueue
 
     def stop_threads(self):
 

@@ -64,13 +64,9 @@ def init_app(app):
 
 
 
-
-
-
-
     @app.route('/circular_shift_demo', methods=['GET', 'POST'])
     def circular_shift_demo():
-
+        print("Circular shift time")
         # Create an instance of Master_Control
         master = KWIC.KWIC3.Master_Control(app)
 
@@ -78,25 +74,24 @@ def init_app(app):
         process_thread = threading.Thread(target=master.run)
         process_thread.start()
 
-        # Wait for the event to signal completion
-        #master.done_event.wait()
+        # Render the initial template
+        return render_template('output.html')
 
+    @app.route('/get_records', methods=['GET'])
+    def get_records():
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
 
+        # Calculate the offset for pagination
+        offset = (page - 1) * per_page
 
-        process_thread.join()
+        # Retrieve records from the database in the specified page
+        with app.app_context():
+            batch_records = db.session.query(AlphabetizedData).order_by(AlphabetizedData.text_line).offset(offset).limit(per_page).all()
+            records = [record.text_line for record in batch_records]
 
-        master.stop_threads()
+        return jsonify(records)
 
-
-        # Run the KWIC engine to get the output
-        output_data = master.get_output()
-
-
-
-
-
-        # Render the output in an HTML template
-        return render_template('output.html', output_data=output_data)
 
 
 

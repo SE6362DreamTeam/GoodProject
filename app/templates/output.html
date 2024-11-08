@@ -6,8 +6,27 @@
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 <div class="container">
     <h1>KWIC Engine Circular Shift Output</h1>
-    <div>
-        {{ output_data|safe }}  <!-- This will display the database record summary -->
+    
+    
+    <div class="continer output-box">
+        <button id="prev-page">Previous</button>
+        <button id="next-page">Next</button>
+        <label for="records-per-page">Records per page:</label>
+        <select id="records-per-page">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+    </div>
+    <div class="continer output-box">
+        <h2>Incremental Data:</h2>
+        <div id="output-box">
+            
+            {{ output_data|safe }}  <!-- This will display the database record summary -->
+        </div>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/pagination.js') }}"></script>
+
 {% endblock %}
