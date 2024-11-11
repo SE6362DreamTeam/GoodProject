@@ -591,7 +591,6 @@ class Master_Control:
         shift_thread.join()
         #alphabetize_thread.join()
         output_thread.join()
-        self.get_output_from_database()
         #self.shiftHistory = self.circularShift.getHistory()
         #self.alphabetizationHistory = self.alphabetize.getHistory()
         # print(self.shiftHistory)
@@ -620,20 +619,6 @@ class Master_Control:
         outputString += "</div>\n"
 
         return outputString
-
-    def get_output_from_database(self):
-        batch_size = 200
-        offset = 0
-
-        with self.app.app_context():  # Ensure the function runs within the app context
-            while True:
-                batch_records = db.session.query(AlphabetizedData).order_by(AlphabetizedData.text_line).offset(offset).limit(batch_size).all()
-                if not batch_records:
-                    break
-                for record in batch_records:
-                    self.outputQueue.put(record)
-                offset += batch_size
-            self.outputQueue.put(None)
 
     def get_outputQueue(self):
         return self.outputQueue

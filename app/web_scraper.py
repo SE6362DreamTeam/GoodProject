@@ -21,7 +21,7 @@ class Web_Scraper:
                                    "any", "because", "been", "before", "being", "below", "between", "both", "during",
                                      "each", "how", "its", "itself", "just", "like", "more", "most", "now", "other",
                                        "over", "same", "some", "such", "than", "then", "there", "these", "this", "those",
-                                         "through", "up", "very", "what", "when", "where", "why", "your"}
+                                         "through", "up", "very", "what", "when", "where", "why", "your", "&"}
 
 
         pass
@@ -67,7 +67,7 @@ class Web_Scraper:
 
                 #Remove noise words
                 cleaned_lines = [self.remove_noise_words(line) for line in cleaned_lines]
-
+                
                 # Remove lines without any letters
                 cleaned_lines = self.remove_empty_lines(cleaned_lines)
 
@@ -89,10 +89,11 @@ class Web_Scraper:
     def remove_noise_words(self, text):
         words = text.split()
         filtered_words = [word for word in words if word.lower() not in self.noise_words]
-        return ' '.join(filtered_words)
+        return ' '.join(filtered_words).strip()
 
     def remove_empty_lines(self, lines):
         return [line for line in lines if re.search(r'[a-zA-Z]', line)]
+
 
     def send_scraped_text_to_database(self):
         try:
