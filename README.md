@@ -238,73 +238,96 @@ Github Pages Link: [https://se6362dreamteam.github.io/GoodProject/](https://se63
 
 ### Meeting Summaries
 **Date: 10/14/24**
+
 Location: Virtual
 
 Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Agenda: 
+
 •	Determine updated requirements of project
 
 
 Summary: 
+
 •	Determined functional requirements and non-functional requirements for Cyberminer
 
 
 **Date: 10/21/24**
+
 Location: Virtual
 
 Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Agenda: 
+
 •	Discuss architectural style and pattern in detail
+
 •	Determine tasks for document and implementation
 
 
 Summary: 
+
 •	Determined which parts of project document each member will focus on
+
 •	Determined implementation tasks
 
 
 **Date: 10/28/24**
+
 Location: Virtual
 
 Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Agenda: 
+
 •	Work on document
+
 •	Check up on implementation progress
 
 
 Summary: 
+
 •	Discussed implementation progress
+
 •	Worked on project document
 
 
 **Date: 11/4/24**
+
 Location: Virtual
 
 Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Agenda:
+
 •	Work on document
+
 •	Check up on implementation progress
 
 
 Summary:
+
 •	Discussed implementation progress
+
 •	Worked on project document
 
 
 **Date: 11/11/24**
+
 Location: Virtual
 
 Participants: Mansi Patel, Logan Dane, Lennon Crow
 
 Agenda:
+
 •	Work on presentation
+
 •	Review project document
 
 
 Summary:
+
 •	Worked on presentation
+
 •	Completed project document
