@@ -147,8 +147,11 @@ def init_app(app):
             search_type = form.search_type.data
             case_sensitive = form.case_sensitive.data
 
-            # Save the search term to PreviousSearches only on form submission
-            if keyword:
+            # Check if the search term already exists in the database
+            existing_search = db.session.query(PreviousSearches).filter_by(search_term=keyword).first()
+
+            # Only add the search term if it doesn't exist
+            if not existing_search and keyword:
                 new_search = PreviousSearches(search_term=keyword, timestamp=str(datetime.now()))
                 db.session.add(new_search)
                 db.session.commit()
