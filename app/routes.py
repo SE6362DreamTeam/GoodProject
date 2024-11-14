@@ -1,8 +1,9 @@
 import threading
+from datetime import datetime
 
 from flask import request, render_template, redirect, url_for, flash, jsonify, abort
 from app.forms import URLForm, SearchForm
-from app.db_map import URLs, ScrapedData, AlphabetizedData
+from app.db_map import URLs, ScrapedData, AlphabetizedData, PreviousSearches
 from app.db import db
 #import KWIC.KWIC2
 import KWIC.KWIC3
@@ -135,84 +136,100 @@ def init_app(app):
         # Render the clear_data template if it's a GET request
         return render_template('clear_data.html')
 
-
-
-    
-
-
-
-
     @app.route('/search', methods=['GET', 'POST'])
     def search():
         form = SearchForm()
         results = {}
         message = None
+
         if form.validate_on_submit():
             keyword = form.keyword.data.strip()
             search_type = form.search_type.data
             case_sensitive = form.case_sensitive.data
+
+            # Save the search term to PreviousSearches only on form submission
             if keyword:
-                query = db.session.query(
-                    AlphabetizedData.alpha_id,
-                    AlphabetizedData.text_line,
-                    URLs.search_term,
-                    URLs.url
-                ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
-                
-                keywords = keyword.split()
-                
-                def make_filter(kw):
-                    if case_sensitive:
-                        return or_(
-                            AlphabetizedData.text_line.like(f'% {kw} %'),  # Word between spaces
-                            AlphabetizedData.text_line.like(f'{kw} %'),  # Word at the start
-                            AlphabetizedData.text_line.like(f'% {kw}'),  # Word at the end
-                            AlphabetizedData.text_line == kw,  # Exact match
-                            URLs.search_term.like(f'% {kw} %'),
-                            URLs.search_term.like(f'{kw} %'),
-                            URLs.search_term.like(f'% {kw}'),
-                            URLs.search_term == kw
-                        )
-                    else:
-                        return or_(
-                            AlphabetizedData.text_line.ilike(f'% {kw} %'),  # Word between spaces
-                            AlphabetizedData.text_line.ilike(f'{kw} %'),  # Word at the start
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
-                            AlphabetizedData.text_line.ilike(f'% {kw}'),  # Word at the end
-                            URLs.search_term.ilike(f'% {kw} %'),
-                            URLs.search_term.ilike(f'{kw} %'),
-                            URLs.search_term.ilike(f'% {kw}')
-                        )
-                
-                if search_type == 'and':
-                    and_filters = [make_filter(kw) for kw in keywords]
-                    query = query.filter(and_(*and_filters))
-                elif search_type == 'or':
-                    or_filters = [make_filter(kw) for kw in keywords]
-                    query = query.filter(or_(*or_filters))
-                elif search_type == 'not':
-                    not_filters = [make_filter(kw) for kw in keywords]
-                    query = query.filter(not_(or_(*not_filters)))
-                
-                # Order by mfa
-                query = query.order_by(AlphabetizedData.mfa.desc())
-                # Execute the query and ensure unique URLs
-                for result in query.all():
-                    url = result.url
-                    if url not in results:
-                        results[url] = result
+                new_search = PreviousSearches(search_term=keyword, timestamp=str(datetime.now()))
+                db.session.add(new_search)
+                db.session.commit()
+
+            # Perform search functionality
+            query = db.session.query(
+                AlphabetizedData.alpha_id,
+                AlphabetizedData.text_line,
+                URLs.search_term,
+                URLs.url
+            ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
+
+            # Split keyword into individual words for AND/OR/NOT search
+            keywords = keyword.split()
+
+            def make_filter(kw):
+                if case_sensitive:
+                    return or_(
+                        AlphabetizedData.text_line.like(f'% {kw} %'),  # Word between spaces
+                        AlphabetizedData.text_line.like(f'{kw} %'),  # Word at the start
+                        AlphabetizedData.text_line.like(f'% {kw}'),  # Word at the end
+                        AlphabetizedData.text_line == kw,  # Exact match
+                        URLs.search_term.like(f'% {kw} %'),
+                        URLs.search_term.like(f'{kw} %'),
+                        URLs.search_term.like(f'% {kw}')
+                    )
+                else:
+                    return or_(
+                        AlphabetizedData.text_line.ilike(f'% {kw} %'),
+                        AlphabetizedData.text_line.ilike(f'{kw} %'),
+                        AlphabetizedData.text_line.ilike(f'% {kw}'),
+                        AlphabetizedData.text_line.ilike(f'{kw}'),
+                        URLs.search_term.ilike(f'% {kw} %'),
+                        URLs.search_term.ilike(f'{kw} %'),
+                        URLs.search_term.ilike(f'% {kw}')
+                    )
+
+            # Apply filters based on search type
+            if search_type == 'and':
+                and_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(and_(*and_filters))
+            elif search_type == 'or':
+                or_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(or_(*or_filters))
+            elif search_type == 'not':
+                not_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(not_(or_(*not_filters)))
+
+            # Order by MFA count to prioritize popular results
+            query = query.order_by(AlphabetizedData.mfa.desc())
+
+            # Execute the query and store unique URLs in results
+            for result in query.all():
+                url = result.url
+                if url not in results:
+                    results[url] = result
 
             # Check if results are empty
             if results:
-                message = None  # Set to None or empty if results are found
+                message = None  # Clear message if results found
             else:
                 message = "No results found for your search."
 
+        # Render the search template with results and message
         return render_template('search.html', form=form, results=results.values(), message=message)
-        # return render_template('search.html', form=form, results=results.values())
 
+    @app.route('/search_suggestions', methods=['GET'])
+    def search_suggestions():
+        query = request.args.get('q', '').strip().lower()
+        suggestions = []
 
+        if query:
+            # Fetch suggestions from PreviousSearches where search_term starts with the input query
+            results = db.session.query(PreviousSearches.search_term).filter(
+                PreviousSearches.search_term.ilike(f"{query}%")
+            ).order_by(PreviousSearches.timestamp.desc()).limit(5).all()
 
+            # Extract the search_term values for the suggestions
+            suggestions = [result.search_term for result in results]
+
+        return jsonify(suggestions)
 
     #this route is used to access the page and increment the mfa count
     @app.route('/page/<int:alpha_id>')
