@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Search</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .output-box {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 600px;
+            background-color: #f9f9f9;
+        }
+        .suggestion-box {
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            background-color: #fff;
+            z-index: 1000;
+            width: 100%;
+        }
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container output-box">
+        <h2>Public Search</h2>
+        <form method="post" autocomplete="off">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.keyword.label }}
+                {{ form.keyword(class="form-control", id="searchInput") }}
+                <div id="suggestionBox" class="suggestion-box"></div>
+            </div>
+            <p><br></p>
+            <div>
+                {{ form.search_type.label }} {{ form.search_type() }}
+            </div>
+            {{ form.case_sensitive.label }} {{ form.case_sensitive() }}
+            <p><br></p>
+            <div>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        {% if message %}
+        <div><p>{{ message }}</p></div>
+        {% endif %}
+
+        <ul>
+            {% for result in results %}
+                <div style="margin-bottom: 15px;">
+                    <li>{{ result.search_term }}</li>
+                    <a href="{{ result.url }}" target="_blank">{{ result.url }}</a>
+                </div>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+    document.getElementById("searchInput").addEventListener("input", function() {
+        const query = this.value;
+        if (query.length > 0) {
+            fetch(`/search_suggestions?q=${query}`)
+                .then(response => response.json())
+                .then(suggestions => {
+                    const suggestionBox = document.getElementById("suggestionBox");
+                    suggestionBox.innerHTML = "";  // Clear previous suggestions
+                    suggestions.forEach(suggestion => {
+                        const item = document.createElement("div");
+                        item.classList.add("suggestion-item");
+                        item.innerText = suggestion;
+                        item.onclick = function() {
+                            document.getElementById("searchInput").value = suggestion;
+                            suggestionBox.innerHTML = "";  // Clear suggestions on selection
+                        };
+                        suggestionBox.appendChild(item);
+                    });
+                });
+        } else {
+            document.getElementById("suggestionBox").innerHTML = "";  // Clear if input is empty
+        }
+    });
+    </script>
+</body>
+</html>

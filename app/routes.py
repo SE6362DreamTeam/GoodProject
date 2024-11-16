@@ -272,3 +272,75 @@ def init_app(app):
         return render_template('view_user_manual.html')
 
 
+    @app.route('/public_search', methods=['GET', 'POST'])
+    def public_search():
+        form = SearchForm()
+        results = {}
+        message = None
+
+        if form.validate_on_submit():
+            keyword = form.keyword.data.strip()
+            search_type = form.search_type.data
+            case_sensitive = form.case_sensitive.data
+
+            # Perform search functionality
+            query = db.session.query(
+                AlphabetizedData.alpha_id,
+                AlphabetizedData.text_line,
+                URLs.search_term,
+                URLs.url
+            ).join(URLs, AlphabetizedData.url_id == URLs.url_id)
+
+            # Split keyword into individual words for AND/OR/NOT search
+            keywords = keyword.split()
+
+            def make_filter(kw):
+                if case_sensitive:
+                    return or_(
+                        AlphabetizedData.text_line.like(f'% {kw} %'),
+                        AlphabetizedData.text_line.like(f'{kw} %'),
+                        AlphabetizedData.text_line.like(f'% {kw}'),
+                        AlphabetizedData.text_line == kw,
+                        URLs.search_term.like(f'% {kw} %'),
+                        URLs.search_term.like(f'{kw} %'),
+                        URLs.search_term.like(f'% {kw}')
+                    )
+                else:
+                    return or_(
+                        AlphabetizedData.text_line.ilike(f'% {kw} %'),
+                        AlphabetizedData.text_line.ilike(f'{kw} %'),
+                        AlphabetizedData.text_line.ilike(f'% {kw}'),
+                        AlphabetizedData.text_line.ilike(f'{kw}'),
+                        URLs.search_term.ilike(f'% {kw} %'),
+                        URLs.search_term.ilike(f'{kw} %'),
+                        URLs.search_term.ilike(f'% {kw}')
+                    )
+
+            # Apply filters based on search type
+            if search_type == 'and':
+                and_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(and_(*and_filters))
+            elif search_type == 'or':
+                or_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(or_(*or_filters))
+            elif search_type == 'not':
+                not_filters = [make_filter(kw) for kw in keywords]
+                query = query.filter(not_(or_(*not_filters)))
+
+            # Order by MFA count to prioritize popular results
+            query = query.order_by(AlphabetizedData.mfa.desc())
+
+            # Execute the query and store unique URLs in results
+            for result in query.all():
+                url = result.url
+                if url not in results:
+                    results[url] = result
+
+            # Check if results are empty
+            if results:
+                message = None
+            else:
+                message = "No results found for your search."
+
+        # Render the public_search template with results and message
+        return render_template('public_search.html', form=form, results=results.values(), message=message)

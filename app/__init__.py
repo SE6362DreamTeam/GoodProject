@@ -1,4 +1,8 @@
+import threading
+
 from flask import Flask
+
+from app.background_tasks import check_urls_periodically
 from app.db import db, init_db  # SQLAlchemy instance
 from dotenv import load_dotenv
 import os
@@ -31,5 +35,8 @@ def create_app():
     # Register the routes
     from app import routes
     routes.init_app(app)
+
+    # Start background tasks
+    threading.Thread(target=check_urls_periodically, args=(app,), daemon=True).start()
 
     return app
