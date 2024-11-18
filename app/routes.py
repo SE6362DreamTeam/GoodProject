@@ -310,7 +310,10 @@ def init_app(app):
         message = None
 
         if form.validate_on_submit():
+            # Normalize the search keyword
             keyword = form.keyword.data.strip()
+            keyword = replace_non_english_characters(keyword)  # Replace non-English characters
+
             search_type = form.search_type.data
             case_sensitive = form.case_sensitive.data
 
@@ -375,3 +378,4 @@ def init_app(app):
 
         # Render the public_search template with results and message
         return render_template('public_search.html', form=form, results=results.values(), message=message)
+
