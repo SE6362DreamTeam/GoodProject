@@ -331,3 +331,25 @@ Summary:
 •	Worked on presentation
 
 •	Completed project document
+
+**Date: 11/18/24**
+
+Location: Virtual
+
+Participants: Mansi Patel, Logan Dane, Lennon Crow
+
+Agenda:
+
+•	Work on presentation
+
+•	Review project document
+
+Summary:
+
+•	Worked on presentation
+
+•	Completed project document
+
+•	Completed project implementation
+
+
