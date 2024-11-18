@@ -145,34 +145,7 @@ class CircularShift_Interface:
     def getHistory(self) -> dict:
         pass
 
-'''
-# Interface for the Alphabetize class
-class Alphabetize_Interface:
-    @abstractmethod
-    def __init__(self, circularShift: CircularShift_Interface) -> None:
-        pass
 
-    @abstractmethod
-    def alphabetize(self) -> None:
-        pass
-
-    @abstractmethod
-    def get_alphabetized_records(self) -> list:
-        pass
-
-    @abstractmethod
-    def get_circular_shift_by_index(self, index: int) -> list:
-        pass
-
-    @abstractmethod
-    def getQueue(self) -> Queue:
-        pass
-
-    @abstractmethod
-    def getHistory(self) -> dict:
-        pass
-
-'''
 
 # Interface for the Output class
 class Output_Interface:
@@ -230,49 +203,7 @@ class AlphaRecord:
 
 
 
-'''
 
-# Class for reading the input from a csv
-class csv_Input(Input_Interface):
-    def __init__(self, lineStorage: LineStorage_Interface) -> None:
-        self.lineStorage = lineStorage
-        self.records = {}
-
-    def read_input(self, file_name) -> None:
-        # Create a dictionary to hold each line we read in
-        # Key: search phrase
-        # Value: list of URLs for that search phrase
-        records = dict()
-
-        # Open the input file (csv format)
-        with open(file_name, "r") as f:
-            reader = csv.reader(f, delimiter=",")
-
-            # Read file line by line
-            for i, line in enumerate(reader):
-                # Do not count the column header row
-                if i == 0:
-                    continue
-                else:
-                    # For each search phrase that has n words, there are n URLs associated with it
-                    # term_length will equal how many URLs will be added as a value for the current search phrase
-                    term_length = len(line[0].split())
-                    # Create a new entry in the dictionary if there is not one for this search phrase already
-                    if records.get(line[0]) == None:
-                        # Key is the query term
-                        # Value is a list of URLs for this search phrase
-                        records[line[0]] = list()
-                    # Go through each URL of the current line and add it to the value
-                    for j in range(1, term_length + 1):
-                        (records[line[0]]).append(line[j])
-                    # Add the line to the lineStorage queue for further processing
-                    self.lineStorage.addLineToQueue(line[0])
-        self.records = records
-        # Add a "None" to the lineStorage queue to show that we are done reading input
-        self.lineStorage.addLineToQueue(None)
-
-
-'''
 
 # Class for reading the input from a database
 class database_input(Input_Interface):
@@ -492,7 +423,7 @@ class Output(Output_Interface):
     def send_output_to_database(self, done_event: threading.Event):
         with self.app.app_context():
             records_batch = []
-            batch_size = 2000
+            batch_size = 5000
             batch_num = 0
 
             while not done_event.is_set() or self.circularShift.getQueue().qsize() > 0:
@@ -600,8 +531,18 @@ class Master_Control:
     def run_output(self):
         self.output.send_output_to_database(self.done_event)
 
+
+    def get_outputQueue(self):
+        return self.outputQueue
+
+    def stop_threads(self):
+
+        self.done_event.set()
+        print("Stopping all threads...")
+
+'''
     def get_output(self):
-        
+
         outputString = ""
 
         # Get the total records sent to the database during the current run
@@ -619,14 +560,7 @@ class Master_Control:
         outputString += "</div>\n"
 
         return outputString
-
-    def get_outputQueue(self):
-        return self.outputQueue
-
-    def stop_threads(self):
-
-        self.done_event.set()
-        print("Stopping all threads...")
+'''
 
 
 

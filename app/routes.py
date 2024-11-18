@@ -15,6 +15,25 @@ import requests
 def init_app(app):
     """Function to initialize routes"""
 
+    # Define a character replacement dictionary
+    char_replacements = {
+        'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ã': 'a', 'å': 'a', 'æ': 'ae',
+        'ç': 'c', 'č': 'c', 'ć': 'c',
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', 'ě': 'e', 'ē': 'e', 'ė': 'e', 'ę': 'e',
+        'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i', 'ī': 'i', 'į': 'i',
+        'ñ': 'n', 'ń': 'n',
+        'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'õ': 'o', 'ø': 'o', 'œ': 'oe',
+        'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u', 'ū': 'u', 'ų': 'u', 'ű': 'u',
+        'ý': 'y', 'ÿ': 'y',
+        'ß': 'ss', 'þ': 'th', 'ð': 'd', 'ł': 'l', 'ø': 'o',
+    }
+
+    def replace_non_english_characters(text):
+        """Replaces non-English letters with their English equivalents."""
+        for char, replacement in char_replacements.items():
+            text = text.replace(char, replacement)
+        return text
+
     @app.route('/')
     def index():
         return render_template('index.html')
@@ -125,16 +144,20 @@ def init_app(app):
                 # Commit the transaction
                 db.session.commit()
 
-                flash("Data cleared from AlphabetizedData and ScrapedData tables.", "success")
+                print("Data cleared from AlphabetizedData and ScrapedData tables.")
             except Exception as e:
                 db.session.rollback()
-                flash(f"Error: {str(e)}", "danger")
+                print(f"Error: {str(e)}", "danger")
 
             # Redirect to the clear_data page to show a confirmation message
             return redirect(url_for('clear_data'))
 
         # Render the clear_data template if it's a GET request
         return render_template('clear_data.html')
+
+
+
+
 
     @app.route('/search', methods=['GET', 'POST'])
     def search():
@@ -143,7 +166,10 @@ def init_app(app):
         message = None
 
         if form.validate_on_submit():
+            # Normalize the search keyword
             keyword = form.keyword.data.strip()
+            keyword = replace_non_english_characters(keyword)  # Replace non-English characters
+
             search_type = form.search_type.data
             case_sensitive = form.case_sensitive.data
 
@@ -217,6 +243,11 @@ def init_app(app):
 
         # Render the search template with results and message
         return render_template('search.html', form=form, results=results.values(), message=message)
+
+
+
+
+
 
     @app.route('/search_suggestions', methods=['GET'])
     def search_suggestions():

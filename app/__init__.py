@@ -36,7 +36,6 @@ def create_app():
     from app import routes
     routes.init_app(app)
 
-    # Start background tasks
-    threading.Thread(target=check_urls_periodically, args=(app,), daemon=True).start()
+
 
     return app
